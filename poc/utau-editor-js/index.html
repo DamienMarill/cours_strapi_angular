@@ -255,9 +255,10 @@
             right: 0;
             bottom: 0;
             background-image: 
+                linear-gradient(to right, rgba(78, 205, 196, 0.05) 1px, transparent 1px),
                 linear-gradient(to right, rgba(78, 205, 196, 0.1) 1px, transparent 1px),
                 linear-gradient(to bottom, transparent 19px, var(--border-color) 20px);
-            background-size: 50px 20px;
+            background-size: 5px 20px, 25px 20px, 100% 20px;
             pointer-events: none;
             z-index: 0;
         }
@@ -340,6 +341,47 @@
             color: white;
         }
 
+        /* Menu contextuel */
+        .context-menu {
+            position: absolute;
+            background: white;
+            border: 2px solid var(--border-color);
+            border-radius: 8px;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+            z-index: 1000;
+            min-width: 160px;
+            font-size: 14px;
+            padding: 4px 0;
+        }
+
+        .context-menu-item {
+            padding: 10px 16px;
+            cursor: pointer;
+            transition: background-color 0.2s ease;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .context-menu-item:hover {
+            background: var(--bg-light);
+        }
+
+        .context-menu-item.delete {
+            color: #dc3545;
+        }
+
+        .context-menu-item.delete:hover {
+            background: #f8d7da;
+            color: #721c24;
+        }
+
+        .context-menu-separator {
+            height: 1px;
+            background: var(--border-color);
+            margin: 4px 0;
+        }
+
         @media (max-width: 768px) {
             .utau-editor {
                 grid-template-columns: 1fr;
@@ -396,6 +438,10 @@
                 <button class="btn-control" id="stopBtn" disabled>⏹</button>
             </div>
             
+            <button class="btn-control delete-btn" id="deleteBtn" disabled style="margin-top: 15px; background: #f8d7da; border-color: #dc3545; color: #721c24;">
+                🗑️ Supprimer la note sélectionnée
+            </button>
+            
             <div style="margin-top: 20px; padding-top: 16px; border-top: 2px solid var(--border-color);">
                 <h4 style="margin-bottom: 12px; color: var(--text-primary);">Instructions</h4>
                 <ul style="font-size: 12px; color: var(--text-secondary); line-height: 1.4;">
@@ -403,6 +449,7 @@
                     <li><strong>Déplacer:</strong> Drag depuis le centre</li>
                     <li><strong>Redimensionner:</strong> Drag depuis les bords</li>
                     <li><strong>Éditer phonème:</strong> Double-clic</li>
+                    <li><strong>Supprimer:</strong> Clic droit ou touches Suppr/Del</li>
                     <li><strong>Jouer note:</strong> Clic touche piano</li>
                 </ul>
             </div>

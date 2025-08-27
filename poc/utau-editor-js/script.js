@@ -10,7 +10,7 @@ class UTAUEditor {
         this.dragStartX = 0;
         this.dragStartY = 0;
         this.resizeHandle = null; // 'left' ou 'right'
-        this.gridSnap = 10; // Pixels de snap pour la grille
+        this.gridSnap = 5; // Pixels de snap pour la grille (plus fin)
         
         // Configuration du piano roll (2 octaves)
         this.notes = ['C', 'C♯', 'D', 'D♯', 'E', 'F', 'F♯', 'G', 'G♯', 'A', 'A♯', 'B'];
@@ -299,6 +299,13 @@ class UTAUEditor {
             this.stopPlayback();
         });
         
+        // Bouton de suppression
+        document.getElementById('deleteBtn').addEventListener('click', () => {
+            if (this.selectedNote !== null) {
+                this.deleteSelectedNote();
+            }
+        });
+        
         // Contrôle BPM
         const bpmSlider = document.getElementById('bpm');
         bpmSlider.addEventListener('input', (e) => {
@@ -351,6 +358,15 @@ class UTAUEditor {
         
         document.addEventListener('mouseup', () => {
             this.endDragOrResize();
+        });
+        
+        // Gestion du clavier pour suppression
+        document.addEventListener('keydown', (e) => {
+            if (e.key === 'Delete' || e.key === 'Backspace') {
+                if (this.selectedNote !== null) {
+                    this.deleteSelectedNote();
+                }
+            }
         });
     }
 
@@ -416,6 +432,13 @@ class UTAUEditor {
             this.editNote(note, index);
         });
         
+        // Clic droit = menu contextuel
+        block.addEventListener('contextmenu', (e) => {
+            e.preventDefault();
+            e.stopPropagation();
+            this.showContextMenu(e, index);
+        });
+        
         // Mouse down pour démarrer drag ou resize
         block.addEventListener('mousedown', (e) => {
             e.preventDefault();
@@ -454,6 +477,20 @@ class UTAUEditor {
         if (selectedBlock) {
             selectedBlock.classList.add('selected');
             this.selectedNote = index;
+            
+            // Activer le bouton de suppression
+            const deleteBtn = document.getElementById('deleteBtn');
+            if (deleteBtn) {
+                deleteBtn.disabled = false;
+            }
+        } else {
+            this.selectedNote = null;
+            
+            // Désactiver le bouton de suppression
+            const deleteBtn = document.getElementById('deleteBtn');
+            if (deleteBtn) {
+                deleteBtn.disabled = true;
+            }
         }
     }
 
@@ -571,9 +608,22 @@ class UTAUEditor {
         const deltaX = e.clientX - this.dragStartX;
         const deltaY = e.clientY - this.dragStartY;
         
-        // Nouvelle position avec snap
-        const newStart = Math.max(0, Math.round((note.start + deltaX) / this.gridSnap) * this.gridSnap);
-        const newRow = Math.max(0, Math.min(this.pianoKeys.length - 1, note.row + Math.round(deltaY / 20)));
+        // Calcul de la nouvelle position sans snap immédiat (plus fluide)
+        const rawNewStart = note.start + deltaX;
+        const rawNewRow = note.row + (deltaY / 20);
+        
+        // Appliquer le snap seulement si le déplacement est significatif (> gridSnap/2)
+        const snapThreshold = this.gridSnap / 2;
+        let newStart = rawNewStart;
+        
+        if (Math.abs(deltaX) > snapThreshold) {
+            newStart = Math.max(0, Math.round(rawNewStart / this.gridSnap) * this.gridSnap);
+        } else {
+            newStart = Math.max(0, rawNewStart);
+        }
+        
+        // Pour les lignes, snap plus précis (chaque ligne = 20px)
+        const newRow = Math.max(0, Math.min(this.pianoKeys.length - 1, Math.round(rawNewRow)));
         
         // Vérifier les collisions
         const wouldCollide = this.utauNotes.some((otherNote, index) => 
@@ -584,12 +634,12 @@ class UTAUEditor {
         );
         
         if (!wouldCollide) {
-            // Mise à jour visuelle immédiate
-            block.style.left = newStart + 'px';
+            // Mise à jour visuelle immédiate (position continue, pas saccadée)
+            block.style.left = Math.round(newStart) + 'px';
             block.style.top = (newRow * 20) + 'px';
             
             // Mise à jour des données temporaire
-            note.start = newStart;
+            note.start = Math.round(newStart);
             note.row = newRow;
             note.pitch = this.pianoKeys[newRow].frequency;
         }
@@ -611,7 +661,7 @@ class UTAUEditor {
         this.hideAddNotePreview();
     }
     
-    // Gérer le redimensionnement
+    // Gérer le redimensionnement (version fluide)
     handleNoteResize(e) {
         if (!this.isResizing || this.selectedNote === null) return;
         
@@ -621,23 +671,30 @@ class UTAUEditor {
         if (!note || !block) return;
         
         const deltaX = e.clientX - this.dragStartX;
-        const snapDelta = Math.round(deltaX / this.gridSnap) * this.gridSnap;
+        
+        // Snap plus fluide pour le resize aussi
+        const snapThreshold = this.gridSnap / 2;
+        let snapDelta = deltaX;
+        
+        if (Math.abs(deltaX) > snapThreshold) {
+            snapDelta = Math.round(deltaX / this.gridSnap) * this.gridSnap;
+        }
         
         if (this.resizeHandle === 'right') {
             // Redimensionner à droite
-            const newWidth = Math.max(20, note.width + snapDelta);
-            block.style.width = newWidth + 'px';
-            note.width = newWidth;
+            const newWidth = Math.max(15, note.width + snapDelta); // Largeur min réduite
+            block.style.width = Math.round(newWidth) + 'px';
+            note.width = Math.round(newWidth);
         } else if (this.resizeHandle === 'left') {
             // Redimensionner à gauche
-            const newWidth = Math.max(20, note.width - snapDelta);
+            const newWidth = Math.max(15, note.width - snapDelta);
             const newStart = Math.max(0, note.start + snapDelta);
             
-            if (newWidth >= 20 && newStart >= 0) {
-                block.style.left = newStart + 'px';
-                block.style.width = newWidth + 'px';
-                note.start = newStart;
-                note.width = newWidth;
+            if (newWidth >= 15 && newStart >= 0) {
+                block.style.left = Math.round(newStart) + 'px';
+                block.style.width = Math.round(newWidth) + 'px';
+                note.start = Math.round(newStart);
+                note.width = Math.round(newWidth);
             }
         }
     }
@@ -660,6 +717,156 @@ class UTAUEditor {
                 this.updateStatus(`Note ${note.syllable}: ${this.pianoKeys[note.row].note}`, 'ready');
             }
         }
+    }
+    
+    // Supprimer la note sélectionnée
+    deleteSelectedNote() {
+        if (this.selectedNote === null || this.selectedNote >= this.utauNotes.length) return;
+        
+        const noteToDelete = this.utauNotes[this.selectedNote];
+        
+        // Confirmation optionnelle
+        const confirmDelete = confirm(`Supprimer la note "${noteToDelete.syllable}" ?`);
+        if (!confirmDelete) return;
+        
+        // Supprimer de la liste
+        this.utauNotes.splice(this.selectedNote, 1);
+        
+        // Réinitialiser la sélection
+        this.selectedNote = null;
+        
+        // Recréer l'affichage
+        this.createNoteBlocks();
+        
+        this.updateStatus(`Note "${noteToDelete.syllable}" supprimée ! 🗑️`, 'ready');
+    }
+    
+    // Supprimer une note par son index
+    deleteNote(noteIndex) {
+        if (noteIndex < 0 || noteIndex >= this.utauNotes.length) return;
+        
+        const noteToDelete = this.utauNotes[noteIndex];
+        
+        // Supprimer de la liste
+        this.utauNotes.splice(noteIndex, 1);
+        
+        // Réinitialiser la sélection si c'était la note sélectionnée
+        if (this.selectedNote === noteIndex) {
+            this.selectedNote = null;
+        } else if (this.selectedNote > noteIndex) {
+            // Ajuster l'index de la note sélectionnée si nécessaire
+            this.selectedNote--;
+        }
+        
+        // Recréer l'affichage
+        this.createNoteBlocks();
+        
+        this.updateStatus(`Note "${noteToDelete.syllable}" supprimée ! 🗑️`, 'ready');
+    }
+    
+    // Afficher le menu contextuel
+    showContextMenu(e, noteIndex) {
+        // Supprimer le menu existant s'il y en a un
+        this.hideContextMenu();
+        
+        const note = this.utauNotes[noteIndex];
+        if (!note) return;
+        
+        // Sélectionner la note
+        this.selectNote(noteIndex);
+        
+        // Créer le menu contextuel
+        const menu = document.createElement('div');
+        menu.className = 'context-menu';
+        menu.innerHTML = `
+            <div class="context-menu-item" data-action="edit">
+                ✏️ Éditer "${note.syllable}"
+            </div>
+            <div class="context-menu-item" data-action="duplicate">
+                📋 Dupliquer
+            </div>
+            <div class="context-menu-separator"></div>
+            <div class="context-menu-item delete" data-action="delete">
+                🗑️ Supprimer
+            </div>
+        `;
+        
+        // Positionner le menu
+        menu.style.left = e.pageX + 'px';
+        menu.style.top = e.pageY + 'px';
+        
+        // Ajouter les event listeners
+        menu.addEventListener('click', (e) => {
+            e.stopPropagation();
+            const action = e.target.getAttribute('data-action');
+            
+            switch(action) {
+                case 'edit':
+                    this.editNote(note, noteIndex);
+                    break;
+                case 'duplicate':
+                    this.duplicateNote(noteIndex);
+                    break;
+                case 'delete':
+                    this.deleteNote(noteIndex);
+                    break;
+            }
+            
+            this.hideContextMenu();
+        });
+        
+        document.body.appendChild(menu);
+        
+        // Fermer le menu en cliquant ailleurs
+        setTimeout(() => {
+            document.addEventListener('click', this.hideContextMenu.bind(this), { once: true });
+        }, 10);
+    }
+    
+    // Masquer le menu contextuel
+    hideContextMenu() {
+        const menu = document.querySelector('.context-menu');
+        if (menu) {
+            menu.remove();
+        }
+    }
+    
+    // Dupliquer une note
+    duplicateNote(noteIndex) {
+        if (noteIndex < 0 || noteIndex >= this.utauNotes.length) return;
+        
+        const originalNote = this.utauNotes[noteIndex];
+        
+        // Créer une copie avec un décalage
+        const duplicatedNote = {
+            id: this.nextNoteId++,
+            syllable: originalNote.syllable,
+            start: originalNote.start + originalNote.width + 10, // Décaler à droite
+            width: originalNote.width,
+            pitch: originalNote.pitch,
+            row: originalNote.row
+        };
+        
+        // Vérifier s'il y a conflit avec une autre note
+        const conflictNote = this.utauNotes.find(note => 
+            note.row === duplicatedNote.row && 
+            duplicatedNote.start < note.start + note.width && 
+            duplicatedNote.start + duplicatedNote.width > note.start
+        );
+        
+        if (conflictNote) {
+            // Si conflit, décaler vers le bas
+            duplicatedNote.row = Math.min(this.pianoKeys.length - 1, duplicatedNote.row + 1);
+            duplicatedNote.pitch = this.pianoKeys[duplicatedNote.row].frequency;
+        }
+        
+        this.utauNotes.push(duplicatedNote);
+        this.createNoteBlocks();
+        
+        // Sélectionner la note dupliquée
+        this.selectNote(this.utauNotes.length - 1);
+        
+        this.updateStatus(`Note "${originalNote.syllable}" dupliquée ! 📋`, 'ready');
     }
 
     // Jouer une note avec les vrais échantillons de Teto
@@ -737,7 +944,7 @@ class UTAUEditor {
         }
     }
 
-    // Jouer toute la composition
+    // Jouer toute la composition avec timeline précise
     async playComposition() {
         if (!this.isAudioInitialized) {
             this.updateStatus('Veuillez d\'abord initialiser l\'audio ! 🔧', 'error');
@@ -757,50 +964,109 @@ class UTAUEditor {
         this.updateStatus('🎵 Lecture de la composition...', 'playing');
         
         const bpm = parseInt(document.getElementById('bpm').value);
-        const beatDuration = 60 / bpm; // durée d'un beat
+        const pixelsPerSecond = 50; // Conversion: 50 pixels = 1 seconde
         
         try {
             // Trier les notes par position temporelle
             const sortedNotes = [...this.utauNotes].sort((a, b) => a.start - b.start);
             
-            for (let i = 0; i < sortedNotes.length; i++) {
-                if (!this.currentlyPlaying) break;
+            // Utiliser Tone.Transport pour le timing précis
+            Tone.Transport.bpm.value = bpm;
+            const startTime = Tone.now();
+            
+            // Programmer toutes les notes avec des timings absolus
+            sortedNotes.forEach((note, index) => {
+                if (!this.currentlyPlaying) return;
                 
-                const note = sortedNotes[i];
-                const duration = (note.width / 100) * beatDuration; // Durée basée sur largeur
+                // Calculer le timing absolu de chaque note
+                const noteStartTime = startTime + (note.start / pixelsPerSecond);
+                const noteDuration = (note.width / pixelsPerSecond);
                 
-                // Sélectionner visuellement la note en cours
-                this.selectNote(this.utauNotes.indexOf(note));
+                console.log(`🎵 Programmation: ${note.syllable} à ${noteStartTime.toFixed(2)}s pour ${noteDuration.toFixed(2)}s`);
                 
-                // Jouer la note avec sa fréquence et son phonème
-                await this.playNote(note.pitch, duration, note.syllable);
-                
-                // Délai avant la note suivante (basé sur position)
-                const nextNote = sortedNotes[i + 1];
-                if (nextNote) {
-                    const gap = (nextNote.start - note.start - note.width) / 100 * beatDuration;
-                    if (gap > 0) {
-                        await new Promise(resolve => setTimeout(resolve, gap * 1000));
+                // Sélection visuelle
+                setTimeout(() => {
+                    if (this.currentlyPlaying) {
+                        this.selectNote(this.utauNotes.indexOf(note));
                     }
-                }
-            }
+                }, (noteStartTime - Tone.now()) * 1000);
+                
+                // Programmer la lecture de la note
+                this.scheduleNote(note.pitch, noteDuration, note.syllable, noteStartTime);
+            });
+            
+            // Calculer la durée totale de la composition
+            const lastNote = sortedNotes[sortedNotes.length - 1];
+            const totalDuration = (lastNote.start + lastNote.width) / pixelsPerSecond;
+            
+            // Attendre la fin de la lecture
+            await new Promise(resolve => {
+                setTimeout(() => {
+                    this.currentlyPlaying = false;
+                    this.updateStatus('Composition terminée ! 🎉', 'ready');
+                    
+                    // Désélectionner toutes les notes
+                    document.querySelectorAll('.note-block').forEach(block => {
+                        block.classList.remove('selected');
+                    });
+                    
+                    resolve();
+                }, totalDuration * 1000 + 500); // +500ms de marge
+            });
+            
         } catch (error) {
             console.error('Erreur lors de la lecture:', error);
+            this.currentlyPlaying = false;
+            this.updateStatus('Erreur de lecture ❌', 'error');
         }
-        
-        this.currentlyPlaying = false;
-        this.updateStatus('Composition terminée ! 🎉', 'ready');
-        
-        // Désélectionner toutes les notes
-        document.querySelectorAll('.note-block').forEach(block => {
-            block.classList.remove('selected');
-        });
+    }
+    
+    // Programmer une note avec timing précis
+    scheduleNote(frequency, duration, syllable, startTime) {
+        // Si on a une syllabe et que la voicebank est chargée (mode échantillons)
+        if (syllable && this.tetoVoicebank && this.tetoVoicebank !== 'synthetic') {
+            const player = this.tetoVoicebank[syllable];
+            
+            if (player) {
+                try {
+                    // Calculer le ratio de pitch
+                    const baseTetoPitch = 261.63;
+                    const pitchRatio = frequency / baseTetoPitch;
+                    
+                    // Cloner le player pour éviter les conflits
+                    const tempPlayer = new Tone.Player(player.buffer).toDestination();
+                    tempPlayer.playbackRate = pitchRatio;
+                    
+                    // Programmer la lecture
+                    tempPlayer.start(startTime);
+                    tempPlayer.stop(startTime + duration);
+                    
+                    console.log(`🎤 Programmé échantillon: ${syllable} à ${startTime.toFixed(2)}s (pitch: ${pitchRatio.toFixed(2)})`);
+                    
+                } catch (error) {
+                    console.error(`Erreur programmation ${syllable}:`, error);
+                    // Fallback sur synthétiseur
+                    this.synth.triggerAttackRelease(frequency, duration, startTime);
+                }
+            } else {
+                // Phonème non disponible, utiliser synthétiseur
+                this.synth.triggerAttackRelease(frequency, duration, startTime);
+            }
+        } else {
+            // Mode synthétique
+            this.synth.triggerAttackRelease(frequency, duration, startTime);
+        }
     }
 
     // Pause la lecture
     pausePlayback() {
         if (this.currentlyPlaying) {
             this.currentlyPlaying = false;
+            
+            // Arrêter le transport Tone.js et tous les sons
+            Tone.Transport.stop();
+            this.synth.releaseAll();
+            
             this.updateStatus('Lecture en pause ⏸️', 'ready');
         }
     }
@@ -808,7 +1074,12 @@ class UTAUEditor {
     // Arrêt complet
     stopPlayback() {
         this.currentlyPlaying = false;
-        this.synth.releaseAll(); // Arrêter tous les sons
+        
+        // Arrêter complètement le transport et tous les sons
+        Tone.Transport.stop();
+        Tone.Transport.cancel(); // Annule tous les événements programmés
+        this.synth.releaseAll();
+        
         this.updateStatus('Lecture arrêtée ⏹️', 'ready');
         
         // Désélectionner toutes les notes
