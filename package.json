@@ -1,0 +1,28 @@
+{
+  "name": "cours-strapi-angular",
+  "version": "1.0.0",
+  "description": "Projet de cours - Strapi + Angular",
+  "private": true,
+  "scripts": {
+    "strapi:dev": "cd poc/strapi-backend && npm run develop",
+    "strapi:build": "cd poc/strapi-backend && npm run build",
+    "strapi:start": "cd poc/strapi-backend && npm run start",
+    "angular:dev": "cd poc/angular-frontend && ng serve",
+    "angular:build": "cd poc/angular-frontend && ng build",
+    "angular:test": "cd poc/angular-frontend && ng test",
+    "dev": "concurrently \"npm run strapi:dev\" \"npm run angular:dev\"",
+    "install:all": "npm install && cd poc/strapi-backend && npm install && cd ../angular-frontend && npm install",
+    "clean": "rm -rf node_modules poc/*/node_modules"
+  },
+  "devDependencies": {
+    "concurrently": "^9.1.0",
+    "cross-env": "^10.0.0"
+  },
+  "engines": {
+    "node": ">=18.13.0",
+    "npm": ">=9.0.0"
+  },
+  "keywords": ["cours", "strapi", "angular", "fullstack", "formation"],
+  "author": "Cours Strapi + Angular",
+  "license": "MIT"
+}

@@ -1,0 +1,171 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>POC Maquette - Strapi + Angular Projects</title>
+    <link rel="stylesheet" href="styles.css">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+</head>
+<body>
+    <!-- Switch de projet en position absolute -->
+    <div class="project-switcher">
+        <div class="switch-container">
+            <span class="switch-label meme-label">🌈 Memes</span>
+            <label class="switch">
+                <input type="checkbox" id="projectSwitch">
+                <span class="slider"></span>
+            </label>
+            <span class="switch-label utau-label">🎵 UTAU</span>
+        </div>
+    </div>
+
+    <!-- Navigation commune -->
+    <nav class="navbar" id="navbar">
+        <div class="nav-brand">
+            <i class="fas fa-image nav-icon" id="navIcon"></i>
+            <span class="nav-title" id="navTitle">MemeManager</span>
+        </div>
+        <div class="nav-links">
+            <a href="#" class="nav-link active" data-page="home">
+                <i class="fas fa-home"></i> Home
+            </a>
+            <a href="#" class="nav-link" data-page="create" id="createLink">
+                <i class="fas fa-plus"></i> <span id="createText">Create</span>
+            </a>
+            <a href="#" class="nav-link" data-page="profile">
+                <i class="fas fa-user"></i> Profile
+            </a>
+            <a href="#" class="nav-link" data-page="search">
+                <i class="fas fa-search"></i> Search
+            </a>
+        </div>
+        <div class="nav-auth">
+            <button class="btn-auth">
+                <i class="fab fa-github"></i> Login
+            </button>
+        </div>
+    </nav>
+
+    <!-- Contenu principal -->
+    <main class="main-content">
+        <!-- Page Home -->
+        <div class="page active" id="home">
+            <div class="hero">
+                <h1 class="hero-title" id="heroTitle">Découvrez les meilleurs memes</h1>
+                <p class="hero-subtitle" id="heroSubtitle">Créez, partagez et likez les memes de la communauté</p>
+            </div>
+            
+            <div class="content-grid" id="contentGrid">
+                <!-- Contenu dynamique selon le projet -->
+            </div>
+        </div>
+
+        <!-- Page Create -->
+        <div class="page" id="create">
+            <div class="create-header">
+                <h2 id="createTitle">Créer un nouveau meme</h2>
+            </div>
+            <div class="create-content" id="createContent">
+                <!-- Interface de création dynamique -->
+            </div>
+        </div>
+
+        <!-- Page Profile -->
+        <div class="page" id="profile">
+            <div class="profile-header">
+                <div class="profile-avatar">
+                    <img src="https://via.placeholder.com/100" alt="Avatar">
+                </div>
+                <div class="profile-info">
+                    <h2>John Doe</h2>
+                    <p class="profile-stats" id="profileStats">142 memes créés • 1.2k likes</p>
+                </div>
+            </div>
+            <div class="profile-content">
+                <h3 id="myCreationsTitle">Mes créations</h3>
+                <div class="profile-grid" id="profileGrid">
+                    <!-- Grille des créations utilisateur -->
+                </div>
+            </div>
+        </div>
+
+        <!-- Page Search -->
+        <div class="page" id="search">
+            <div class="search-header">
+                <div class="search-bar">
+                    <i class="fas fa-search"></i>
+                    <input type="text" placeholder="Rechercher..." id="searchInput">
+                </div>
+                <div class="search-filters" id="searchFilters">
+                    <!-- Filtres dynamiques selon le projet -->
+                </div>
+            </div>
+            <div class="search-results" id="searchResults">
+                <p class="no-results">Utilisez la barre de recherche pour trouver du contenu</p>
+            </div>
+        </div>
+
+        <!-- Page Detail -->
+        <div class="page" id="detail">
+            <div class="detail-header">
+                <button class="btn-back" onclick="goBack()">
+                    <i class="fas fa-arrow-left"></i> Retour
+                </button>
+                <div class="detail-actions">
+                    <button class="btn-like detail-like">
+                        <i class="far fa-heart"></i> <span id="detailLikes">234</span>
+                    </button>
+                    <button class="btn-like">
+                        <i class="fas fa-share"></i> Partager
+                    </button>
+                </div>
+            </div>
+
+            <div class="detail-content">
+                <div class="detail-main">
+                    <div class="detail-media" id="detailMedia">
+                        <!-- Contenu multimédia selon le projet -->
+                    </div>
+                    
+                    <div class="detail-info">
+                        <h1 class="detail-title" id="detailTitle">Titre de la ressource</h1>
+                        <div class="detail-meta">
+                            <div class="author-info">
+                                <img src="https://via.placeholder.com/40" alt="Avatar" class="author-avatar">
+                                <div>
+                                    <strong class="author-name" id="detailAuthor">Nom de l'auteur</strong>
+                                    <small class="publish-date">Il y a 2 heures</small>
+                                </div>
+                            </div>
+                            <div class="detail-stats" id="detailStats">
+                                <span><i class="fas fa-eye"></i> 1.2k vues</span>
+                                <span><i class="fas fa-heart"></i> <span id="detailLikesCount">234</span> likes</span>
+                            </div>
+                        </div>
+                        
+                        <div class="detail-description" id="detailDescription">
+                            <p>Description de la ressource qui peut être plus ou moins longue selon le contenu...</p>
+                        </div>
+                        
+                        <div class="detail-tags" id="detailTags">
+                            <!-- Tags dynamiques -->
+                        </div>
+                    </div>
+                </div>
+
+                <div class="detail-sidebar">
+                    <div class="related-section">
+                        <h3>Suggestions</h3>
+                        <div class="related-items" id="relatedItems">
+                            <!-- Items similaires -->
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <script src="script.js"></script>
+</body>
+</html>
