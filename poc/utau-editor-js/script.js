@@ -28,10 +28,22 @@ class UTAUEditor {
         // ID counter pour nouvelles notes
         this.nextNoteId = 5;
         
-        // Phonèmes japonais de Teto (limités aux disponibles dans la voicebank)
-        this.phonemes = ['a', 'i', 'u', 'e', 'o', 'ka', 'ki', 'ku', 'ke', 'ko', 
-                        'ta', 'chi', 'tsu', 'te', 'to', 'na', 'ni', 'nu', 'ne', 'no',
-                        'chan', 'nyan', 'desu', 'n'];
+        // Phonèmes japonais de Teto (correspondant aux fichiers wav disponibles)
+        this.phonemes = [
+            // Voyelles principales
+            'a', 'i', 'u', 'e', 'o',
+            // Syllabes Ka
+            'ka', 'ki', 'ku', 'ke', 'ko',
+            // Syllabes Ta  
+            'ta', 'chi', 'tsu', 'te', 'to',
+            // Syllabes Na
+            'na', 'ni', 'nu', 'ne', 'no',
+            // Autres phonèmes courants
+            'n', 'wa', 'ya', 'yu', 'yo',
+            'ra', 'ri', 'ru', 're', 'ro',
+            // Spéciaux Teto
+            'chan', 'nyan'
+        ];
         
         this.synth = null;
         this.filter = null;
@@ -125,11 +137,10 @@ class UTAUEditor {
             // Connecter les effets
             this.synth.chain(this.filter, this.reverb, this.compressor, Tone.Destination);
             
-            // Charger la voicebank Teto simplifiée
+            // Charger la voicebank Teto avec les vrais échantillons
             await this.loadTetoVoicebank();
             
             this.isAudioInitialized = true;
-            this.updateStatus('Kasane Teto initialisée ! 🎤✨', 'ready');
             
             const initBtn = document.getElementById('initAudio');
             initBtn.textContent = '✅ Teto Prête';
@@ -157,46 +168,110 @@ class UTAUEditor {
         }
     }
     
-    // Charger la voicebank Teto avec phonèmes japonais
+    // Charger la voicebank Teto avec les vrais échantillons audio
     async loadTetoVoicebank() {
-        // Voicebank Teto simplifiée avec fréquences accordées
-        this.tetoVoicebank = {
+        this.updateStatus('Chargement des échantillons Teto... ♪', 'loading');
+        
+        // Mapping des phonèmes vers les fichiers WAV de Teto (maintenant dans assets/teto-samples)
+        const tetoSamples = {
             // Voyelles principales
-            'a': { baseFreq: 220, formants: [800, 1200, 2500], type: 'vowel' },
-            'i': { baseFreq: 440, formants: [300, 2300, 3000], type: 'vowel' },
-            'u': { baseFreq: 196, formants: [300, 600, 2200], type: 'vowel' },
-            'e': { baseFreq: 330, formants: [500, 1800, 2500], type: 'vowel' },
-            'o': { baseFreq: 220, formants: [500, 900, 2500], type: 'vowel' },
+            'a': 'assets/teto-samples/a.wav',
+            'i': 'assets/teto-samples/i.wav',
+            'u': 'assets/teto-samples/u.wav',
+            'e': 'assets/teto-samples/e.wav',
+            'o': 'assets/teto-samples/o.wav',
             
             // Syllabes Ka
-            'ka': { baseFreq: 440, formants: [800, 1200, 2500], type: 'consonant' },
-            'ki': { baseFreq: 493, formants: [300, 2300, 3000], type: 'consonant' },
-            'ku': { baseFreq: 523, formants: [300, 600, 2200], type: 'consonant' },
-            'ke': { baseFreq: 587, formants: [500, 1800, 2500], type: 'consonant' },
-            'ko': { baseFreq: 659, formants: [500, 900, 2500], type: 'consonant' },
+            'ka': 'assets/teto-samples/ka.wav',
+            'ki': 'assets/teto-samples/ki.wav',
+            'ku': 'assets/teto-samples/ku.wav',
+            'ke': 'assets/teto-samples/ke.wav',
+            'ko': 'assets/teto-samples/ko.wav',
             
             // Syllabes Ta
-            'ta': { baseFreq: 349, formants: [800, 1200, 2500], type: 'consonant' },
-            'chi': { baseFreq: 392, formants: [300, 2300, 3000], type: 'consonant' },
-            'tsu': { baseFreq: 440, formants: [300, 600, 2200], type: 'consonant' },
-            'te': { baseFreq: 493, formants: [500, 1800, 2500], type: 'consonant' },
-            'to': { baseFreq: 523, formants: [500, 900, 2500], type: 'consonant' },
+            'ta': 'assets/teto-samples/ta.wav',
+            'chi': 'assets/teto-samples/chi.wav',
+            'tsu': 'assets/teto-samples/tsu.wav',
+            'te': 'assets/teto-samples/te.wav',
+            'to': 'assets/teto-samples/to.wav',
             
-            // Syllabes Na  
-            'na': { baseFreq: 311, formants: [800, 1200, 2500], type: 'consonant' },
-            'ni': { baseFreq: 349, formants: [300, 2300, 3000], type: 'consonant' },
-            'nu': { baseFreq: 392, formants: [300, 600, 2200], type: 'consonant' },
-            'ne': { baseFreq: 440, formants: [500, 1800, 2500], type: 'consonant' },
-            'no': { baseFreq: 493, formants: [500, 900, 2500], type: 'consonant' },
+            // Syllabes Na
+            'na': 'assets/teto-samples/na.wav',
+            'ni': 'assets/teto-samples/ni.wav',
+            'nu': 'assets/teto-samples/nu.wav',
+            'ne': 'assets/teto-samples/ne.wav',
+            'no': 'assets/teto-samples/no.wav',
             
-            // Spéciaux Teto
-            'chan': { baseFreq: 523, formants: [300, 2300, 3000], type: 'special' },
-            'nyan': { baseFreq: 440, formants: [300, 2300, 3000], type: 'special' },
-            'desu': { baseFreq: 392, formants: [500, 1800, 2500], type: 'special' },
-            'n': { baseFreq: 220, formants: [300, 1000, 2200], type: 'nasal' }
+            // Autres phonèmes utiles
+            'n': 'assets/teto-samples/n.wav',
+            'wa': 'assets/teto-samples/wa.wav',
+            'ya': 'assets/teto-samples/ya.wav',
+            'yu': 'assets/teto-samples/yu.wav',
+            'yo': 'assets/teto-samples/yo.wav',
+            'ra': 'assets/teto-samples/ra.wav',
+            'ri': 'assets/teto-samples/ri.wav',
+            'ru': 'assets/teto-samples/ru.wav',
+            're': 'assets/teto-samples/re.wav',
+            'ro': 'assets/teto-samples/ro.wav',
+            
+            // Syllabes spéciales 
+            'chan': 'assets/teto-samples/chan.wav',
+            'nyan': 'assets/teto-samples/nyan.wav'
         };
+
+        // Créer les Players pour chaque échantillon
+        this.tetoVoicebank = {};
+        this.audioBuffers = {};
         
-        this.updateStatus('Voicebank Teto chargée ! (≧◡≦)', 'ready');
+        try {
+            // Charger tous les échantillons en utilisant Tone.js Players
+            const loadPromises = Object.entries(tetoSamples).map(async ([phoneme, url]) => {
+                try {
+                    // Créer un buffer audio pour chaque échantillon
+                    const buffer = new Tone.Buffer(url);
+                    await new Promise((resolve, reject) => {
+                        buffer.onload = resolve;
+                        buffer.onerror = reject;
+                        // Timeout de 5 secondes par fichier
+                        setTimeout(() => reject(new Error(`Timeout loading ${phoneme}`)), 5000);
+                    });
+                    
+                    // Créer un Player pour cet échantillon
+                    const player = new Tone.Player(buffer).toDestination();
+                    
+                    this.tetoVoicebank[phoneme] = player;
+                    this.audioBuffers[phoneme] = buffer;
+                    
+                    return { phoneme, success: true };
+                } catch (error) {
+                    console.warn(`Impossible de charger ${phoneme}: ${error.message}`);
+                    return { phoneme, success: false };
+                }
+            });
+            
+            const results = await Promise.all(loadPromises);
+            const successful = results.filter(r => r.success).length;
+            const total = results.length;
+            
+            if (successful > 0) {
+                this.updateStatus(`✅ Teto chargée ! ${successful}/${total} échantillons (≧◡≦)`, 'ready');
+            } else {
+                throw new Error('Aucun échantillon chargé');
+            }
+            
+        } catch (error) {
+            console.error('Erreur lors du chargement des échantillons:', error);
+            this.updateStatus('❌ Erreur de chargement. Mode synthèse activé', 'error');
+            
+            // Fallback: mode synthétique si les fichiers ne se chargent pas
+            await this.loadSyntheticVoicebank();
+        }
+    }
+    
+    // Voicebank synthétique de fallback
+    async loadSyntheticVoicebank() {
+        this.tetoVoicebank = 'synthetic'; // Flag pour indiquer le mode synthétique
+        this.updateStatus('Mode synthèse Teto activé 🎵', 'ready');
     }
 
     initializeUI() {
@@ -587,7 +662,7 @@ class UTAUEditor {
         }
     }
 
-    // Jouer une note avec Teto
+    // Jouer une note avec les vrais échantillons de Teto
     async playNote(frequency, duration = 0.5, syllable = null) {
         if (!this.isAudioInitialized) {
             this.updateStatus('Veuillez d\'abord initialiser l\'audio ! 🔧', 'error');
@@ -596,38 +671,69 @@ class UTAUEditor {
         
         const now = Tone.now();
         
-        // Si on a une syllabe spécifique, utiliser la voicebank Teto
-        if (syllable && this.tetoVoicebank && this.tetoVoicebank[syllable]) {
-            const phoneme = this.tetoVoicebank[syllable];
+        // Si on a une syllabe et que la voicebank est chargée (mode échantillons)
+        if (syllable && this.tetoVoicebank && this.tetoVoicebank !== 'synthetic') {
+            const player = this.tetoVoicebank[syllable];
             
-            // Ajuster le filtre selon le type de phonème
-            switch(phoneme.type) {
-                case 'vowel':
+            if (player) {
+                try {
+                    // Calculer le ratio de pitch pour ajuster à la fréquence désirée
+                    // Note de base de Teto est autour de C4 (261.63 Hz)
+                    const baseTetoPitch = 261.63;
+                    const pitchRatio = frequency / baseTetoPitch;
+                    
+                    // Ajuster la vitesse de lecture pour changer le pitch (effet chipmunk acceptable)
+                    player.playbackRate = pitchRatio;
+                    
+                    // Appliquer la chaîne d'effets si disponible
+                    if (this.filter) {
+                        player.chain(this.filter, this.reverb || Tone.Destination, this.compressor || Tone.Destination);
+                    }
+                    
+                    // Jouer l'échantillon
+                    player.start(now);
+                    
+                    // Arrêter après la durée spécifiée
+                    player.stop(now + duration);
+                    
+                    console.log(`🎤 Joue échantillon Teto: ${syllable} (pitch ratio: ${pitchRatio.toFixed(2)})`);
+                    
+                } catch (error) {
+                    console.error(`Erreur lecture ${syllable}:`, error);
+                    // Fallback sur synthétiseur
+                    this.synth.triggerAttackRelease(frequency, duration, now);
+                }
+            } else {
+                // Phonème non disponible, utiliser fallback
+                console.warn(`Phonème ${syllable} non trouvé, utilisation synthétiseur`);
+                this.synth.triggerAttackRelease(frequency, duration, now);
+            }
+        } 
+        // Mode synthétique ou pas de syllabe spécifique
+        else if (this.tetoVoicebank === 'synthetic' || !syllable) {
+            // Utiliser le synthétiseur avec filtrage Teto
+            if (syllable) {
+                // Ajuster les paramètres selon le type de phonème (estimation)
+                const vowels = ['a', 'i', 'u', 'e', 'o'];
+                const isVowel = vowels.includes(syllable);
+                
+                if (isVowel) {
                     this.filter.frequency.setValueAtTime(1400, now);
-                    duration *= 1.2; // Voyelles plus longues
-                    break;
-                case 'consonant':
+                    duration *= 1.2;
+                } else {
                     this.filter.frequency.setValueAtTime(1000, now);
                     duration *= 0.9;
-                    break;
-                case 'special':
-                    this.filter.frequency.setValueAtTime(1600, now);
-                    duration *= 1.1;
-                    break;
-                case 'nasal':
-                    this.filter.frequency.setValueAtTime(800, now);
-                    duration *= 0.8;
-                    break;
+                }
             }
             
-            // Jouer avec la fréquence accordée à Teto
             this.synth.triggerAttackRelease(frequency, duration, now);
             
-            // Reset du filtre après la note
-            this.filter.frequency.setValueAtTime(1200, now + duration);
-        } else {
-            // Lecture normale sans phonème spécifique
-            this.synth.triggerAttackRelease(frequency, duration, now);
+            // Reset du filtre
+            if (this.filter) {
+                this.filter.frequency.setValueAtTime(1200, now + duration);
+            }
+            
+            console.log(`🎵 Synthèse: ${syllable || 'note'} (${frequency.toFixed(1)}Hz)`);
         }
     }
 
