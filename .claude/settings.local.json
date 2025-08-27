@@ -1,0 +1,15 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(mkdir:*)",
+      "Bash(npm init:*)",
+      "Bash(npm install:*)",
+      "Bash(npm run install:all:*)",
+      "Bash(npm run init:*)",
+      "Bash(npm run bootstrap:*)",
+      "Bash(timeout 10 npm run directus:dev)"
+    ],
+    "deny": [],
+    "ask": []
+  }
+}

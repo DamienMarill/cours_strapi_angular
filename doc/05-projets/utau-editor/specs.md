@@ -13,7 +13,7 @@ Application web pour créer et éditer des phrases chantées avec des banques de
 ### Gestion des Projets
 - [x] Création de projets vocaux
 - [x] Genération audio à partir de phonèmes
-- [x] Sauvegarde automatique local -> puis export vers Strapi lors de la génération
+- [x] Sauvegarde automatique local -> puis export vers Directus lors de la génération
 - [x] CRUD complet des projets
 
 ### Éditeur Audio
@@ -40,64 +40,69 @@ Application web pour créer et éditer des phrases chantées avec des banques de
 - [ ] Multipiste audio
 - [ ] Effets vocaux (reverb, chorus)
 
-## 📊 Modèle de Données Strapi
+## 📊 Modèle de Données Directus
 
-### Content-Types
+### Collections
 
-#### VoiceProject
+#### voice_projects
 ```javascript
 {
+  id: "uuid",
   title: "string", // required
   description: "text",
-  audioFile: "media", // fichier final généré
+  audioFile: "file", // fichier final généré
   bpm: "integer", // tempo
   lyrics: "text", // paroles en romaji
   phonemes: "text", // séquence phonétique
-  voiceBank: "relation(VoiceBank, many-to-one)",
-  author: "relation(User, many-to-one)",
-  likes: "relation(Like, one-to-many)",
+  voiceBank: "m2o(voice_banks)",
+  author: "m2o(directus_users)",
+  likes: "o2m(likes)",
   isPublic: "boolean", // default: true
-  tags: "relation(Tag, many-to-many)",
+  tags: "m2m(tags)",
   duration: "integer", // en secondes
-  createdAt: "datetime",
-  updatedAt: "datetime"
+  date_created: "datetime",
+  date_updated: "datetime"
 }
 ```
 
-#### VoiceBank
+#### voice_banks
 ```javascript
 {
+  id: "uuid",
   name: "string", // required, unique
   character: "string", // nom du personnage (ex: "Kasane Teto")
   description: "text",
-  language: "enumeration(japanese, english, other)",
+  language: "select", // japanese, english, other
   sampleRate: "integer", // 44100, 48000, etc.
   author: "string", // créateur de la banque
-  avatar: "media", // image du personnage
-  samples: "relation(VoiceSample, one-to-many)",
-  projects: "relation(VoiceProject, one-to-many)",
+  avatar: "file", // image du personnage
+  samples: "o2m(voice_samples)",
+  projects: "o2m(voice_projects)",
   isOfficial: "boolean", // banques officielles vs communauté
   downloadCount: "integer"
 }
 ```
 
-#### VoiceSample
+#### voice_samples
 ```javascript
 {
+  id: "uuid",
   phoneme: "string", // "a", "ka", "te", etc.
-  audioFile: "media", // fichier .wav
-  voiceBank: "relation(VoiceBank, many-to-one)",
-  frequency: "decimal", // note de base
+  audioFile: "file", // fichier .wav avec métadonnées
+  voiceBank: "m2o(voice_banks)",
+  frequency: "float", // note de base
   duration: "integer", // en millisecondes
-  quality: "enumeration(low, medium, high)"
+  quality: "select" // low, medium, high
 }
 ```
 
-#### Like
+#### likes
 ```javascript
 {
-  user: "relation(User, many-to-one)",
-  project: "relation(VoiceProject, many-to-one)"
+  id: "uuid",
+  user: "m2o(directus_users)",
+  project: "m2o(voice_projects)",
+  date_created: "datetime"
 }
 ```
 
@@ -145,17 +150,24 @@ Application web pour créer et éditer des phrases chantées avec des banques de
 - Phonèmes populaires en début de liste
 - Couleurs par famille phonétique
 
-## 🔒 Permissions Strapi
+## 🔒 Permissions Directus (RBAC)
 
 ### Rôles
-- **Public** : Écoute projets publics, browse banques
-- **Authenticated** : CRUD projets, upload samples
-- **Voice Creator** : Upload banques complètes
-- **Admin** : Gestion modération
+- **Public** : Read projets publics, browse banques
+- **User** : CRUD projets personnels, upload samples
+- **Voice Creator** : Upload banques complètes + modération samples
+- **Administrator** : Full access + gestion banques officielles
 
-### Politiques
-- Projets privés = auteur seulement
-- Banques officielles = admin seulement
+### Permissions
+- **voice_projects** : Read si public, CRUD owner only
+- **voice_samples** : Read all, Create Voice Creator+
+- **voice_banks** : Read all, Create/Update Voice Creator+
+- **likes** : CRUD owner only
+
+### Filtres Dynamiques
+- Projets publics : `isPublic = true`
+- Mes projets : `author = $CURRENT_USER`
+- Banques officielles : `isOfficial = true`
 
 ## 📱 Responsive Design
 

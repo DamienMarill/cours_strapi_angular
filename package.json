@@ -1,17 +1,18 @@
 {
-  "name": "cours-strapi-angular",
+  "name": "cours-directus-angular",
   "version": "1.0.0",
-  "description": "Projet de cours - Strapi + Angular",
+  "description": "Projet de cours - Directus + Angular",
   "private": true,
   "scripts": {
-    "strapi:dev": "cd poc/strapi-backend && npm run develop",
-    "strapi:build": "cd poc/strapi-backend && npm run build",
-    "strapi:start": "cd poc/strapi-backend && npm run start",
+    "directus:dev": "cd poc/directus-backend && npm run dev",
+    "directus:build": "cd poc/directus-backend && npm run build",
+    "directus:start": "cd poc/directus-backend && npm run start",
+    "directus:init": "cd poc/directus-backend && npm run init",
     "angular:dev": "cd poc/angular-frontend && ng serve",
     "angular:build": "cd poc/angular-frontend && ng build",
     "angular:test": "cd poc/angular-frontend && ng test",
-    "dev": "concurrently \"npm run strapi:dev\" \"npm run angular:dev\"",
-    "install:all": "npm install && cd poc/strapi-backend && npm install && cd ../angular-frontend && npm install",
+    "dev": "concurrently \"npm run directus:dev\" \"npm run angular:dev\"",
+    "install:all": "npm install && cd poc/directus-backend && npm install && cd ../angular-frontend && npm install",
     "clean": "rm -rf node_modules poc/*/node_modules"
   },
   "devDependencies": {
@@ -22,7 +23,7 @@
     "node": ">=18.13.0",
     "npm": ">=9.0.0"
   },
-  "keywords": ["cours", "strapi", "angular", "fullstack", "formation"],
-  "author": "Cours Strapi + Angular",
+  "keywords": ["cours", "directus", "angular", "fullstack", "formation"],
+  "author": "Cours Directus + Angular",
   "license": "MIT"
 }

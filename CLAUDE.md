@@ -4,10 +4,10 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Project Overview
 
-This is a fullstack development course project combining Strapi v5 (backend) and Angular v20 (frontend). The project is a monorepo with educational proof-of-concepts (POCs) for two student projects: a meme manager and a UTAU editor.
+This is a fullstack development course project combining Directus v11 (backend) and Angular v20 (frontend). The project is a monorepo with educational proof-of-concepts (POCs) for two student projects: a meme manager and a UTAU editor.
 
 **Key Technologies:**
-- **Backend**: Strapi v5.23.0 Community Edition with SQLite
+- **Backend**: Directus v11.10.2 with SQLite and TypeScript support
 - **Frontend**: Angular v20.2.0 with standalone components
 - **Monorepo Management**: npm workspaces with centralized scripts
 - **Development Tools**: concurrently, cross-env, TypeScript v5
@@ -19,29 +19,36 @@ This is a fullstack development course project combining Strapi v5 (backend) and
 # Install all dependencies for the entire monorepo
 npm run install:all
 
-# Run both Strapi and Angular in development mode simultaneously
+# Initialize Directus (first time only)
+npm run directus:init
+
+# Run both Directus and Angular in development mode simultaneously
 npm run dev
 
 # Clean all node_modules directories
 npm run clean
 ```
 
-### Strapi Backend Commands
+### Directus Backend Commands
 ```bash
 # Development server with auto-reload
-npm run strapi:dev
+npm run directus:dev
 
-# Build for production
-npm run strapi:build
+# Build/Bootstrap Directus
+npm run directus:build
 
 # Start production server
-npm run strapi:start
+npm run directus:start
 
-# Direct Strapi commands (run from poc/strapi-backend/)
-cd poc/strapi-backend
-npm run develop     # Same as strapi:dev
-npm run console     # Strapi console
-npm run upgrade     # Upgrade to latest Strapi version
+# Initialize Directus (first time setup)
+npm run directus:init
+
+# Direct Directus commands (run from poc/directus-backend/)
+cd poc/directus-backend
+npm run dev         # Same as directus:dev
+npm run start       # Production start
+npm run init        # Initialize database and admin
+npm run bootstrap   # Bootstrap configuration
 ```
 
 ### Angular Frontend Commands
@@ -66,21 +73,23 @@ ng test           # Run tests
 
 ### Monorepo Structure
 ```
-cours-strapi-angular/
+cours-directus-angular/
 ├── doc/                    # Course documentation
 ├── poc/                    # Proof of concepts
-│   ├── strapi-backend/     # Strapi v5 backend
+│   ├── directus-backend/   # Directus v11 backend
 │   └── angular-frontend/   # Angular v20 frontend
 ├── TETO-tougou-110401/    # UTAU voice library (for UTAU project)
 └── package.json           # Root monorepo configuration
 ```
 
-### Strapi Backend Architecture
-- **Version**: 5.23.0 (latest stable)
-- **Database**: SQLite (better-sqlite3) for development
-- **Plugins**: Users & Permissions, Cloud plugin
-- **TypeScript**: Full TypeScript support enabled
-- **Authentication**: OAuth2 integration planned (Google/GitHub/Discord)
+### Directus Backend Architecture
+- **Version**: 11.10.2 (latest stable)
+- **Database**: SQLite with native support
+- **Admin Panel**: Modern, intuitive interface at http://localhost:8055
+- **TypeScript**: Full TypeScript support with @directus/sdk
+- **Authentication**: Built-in user management with granular permissions
+- **File Management**: Advanced media handling with transformations
+- **API**: REST and GraphQL endpoints out-of-the-box
 
 ### Angular Frontend Architecture
 - **Version**: 20.2.0 (latest with modern features)
@@ -92,10 +101,11 @@ cours-strapi-angular/
 
 ### Key Development Patterns
 - **Angular**: Use standalone components exclusively
-- **Strapi**: Follow v5 architecture with new Document Service API
-- **Communication**: REST API integration between frontend and backend
+- **Directus**: Leverage database-first approach with dynamic schemas
+- **Communication**: REST/GraphQL API integration with @directus/sdk
 - **State Management**: Angular Signals for reactive state (planned)
-- **File Uploads**: Integrated file handling for both meme images and UTAU audio files
+- **File Uploads**: Advanced media management with automatic transformations
+- **Permissions**: Role-based access control (RBAC) for granular security
 
 ## Development Workflow
 
@@ -105,40 +115,57 @@ cours-strapi-angular/
 3. Use `npm run dev` for concurrent development of both projects
 
 ### Port Configuration
-- **Strapi**: Typically runs on http://localhost:1337
+- **Directus**: Runs on http://localhost:8055
 - **Angular**: Runs on http://localhost:4200
 - **Development**: Both run simultaneously via concurrently
+
+### Ready to Use Setup ✅
+1. Run `npm run install:all` to install dependencies (if not done)
+2. **Directus is already initialized!** Database and admin user ready
+3. Run `npm run dev` to start both services
+4. Access admin panel at http://localhost:8055
 
 ### File Structure Guidelines
 - Keep POCs in separate directories under `poc/`
 - Course-specific features go in dedicated directories
 - Shared utilities should be clearly documented
-- Follow Strapi v5 and Angular v20 best practices
+- Follow Directus v11 and Angular v20 best practices
 
 ### Testing Strategy
 - **Angular**: Unit tests with Jasmine
-- **Strapi**: Integration tests for API endpoints
+- **Directus**: API endpoint testing with built-in tools
 - **E2E**: Cross-application testing for full workflows
 
 ## Important Notes
 
 ### Version Requirements
-- Node.js: 18.13.0 to 22.x.x (as specified by Strapi)
+- Node.js: 18.13.0 to 22.x.x (as specified by Directus)
 - npm: >= 9.0.0
 - TypeScript: v5 across all projects
 
 ### Development Focus
 This is an educational project with two distinct application paths:
-1. **Meme Manager**: Image uploads, text generation, social features
-2. **UTAU Editor**: Audio file handling, Japanese phoneme support, project export
+1. **Meme Manager**: Image uploads, text generation, social features with advanced media transformations
+2. **UTAU Editor**: Audio file handling, Japanese phoneme support, project export with metadata management
 
 ### Dependencies to Note
 - `concurrently`: Enables parallel execution of frontend and backend
 - `cross-env`: Cross-platform environment variable handling
-- `better-sqlite3`: High-performance SQLite for Strapi
+- `@directus/sdk`: TypeScript SDK for seamless API integration
+- `sqlite3`: High-performance SQLite database driver
 - Modern Angular features: Signals, standalone components, latest CLI
 
 ### Database Configuration
-- SQLite database file will be created in `poc/strapi-backend/.tmp/`
-- Database is excluded from version control
-- Initial setup creates admin user during first run of Strapi
+- SQLite database file: `poc/directus-backend/data.db` (✅ **Already initialized!**)
+- Database is excluded from version control via .gitignore
+- Admin user already created during initialization
+- Admin panel available at http://localhost:8055 for visual database management
+- Full configuration available in auto-generated `.env` file
+
+### Directus Features for Educational Use
+- **Visual Schema Builder**: Create collections and fields via UI
+- **Relationship Management**: Visual relationship editor
+- **Media Library**: Advanced file management with transformations
+- **User Roles**: Granular permission system
+- **API Explorer**: Built-in API documentation and testing
+- **Flows**: Visual workflow automation (advanced feature)

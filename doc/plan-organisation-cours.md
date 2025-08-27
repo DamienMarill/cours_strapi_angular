@@ -1,4 +1,4 @@
-# Plan d'Organisation du Cours Strapi + Angular
+# Plan d'Organisation du Cours Directus + Angular
 
 ## 🎯 Vue d'ensemble
 
@@ -6,7 +6,7 @@
 - **Gestionnaire de Memes** - Pour les amateurs de culture internet
 - **Éditeur de Phrases UTAU** - Pour les passionnés de synthèse vocale
 
-**Stack technique commune** : Strapi v5 + Angular v20
+**Stack technique commune** : Directus v11 + Angular v20
 
 ## 📋 Fonctionnalités Communes Obligatoires
 
@@ -37,14 +37,14 @@
 
 ### Phase 1: Fondations (Semaine 1-2)
 - **Jour 1-2** : Introduction architecture fullstack
-- **Jour 3-4** : Setup Strapi - Modèles de données
+- **Jour 3-4** : Setup Directus - Collections et schémas
 - **Jour 5-6** : Setup Angular - Architecture moderne
 - **POCs** : Authentification simple, CRUD basique
 
 ### Phase 2: Backend Avancé (Semaine 3-4)  
-- **Jour 7-8** : OAuth2 avec Strapi
-- **Jour 9-10** : Relations et permissions
-- **Jour 11-12** : Upload de fichiers et storage
+- **Jour 7-8** : OAuth2 avec Directus
+- **Jour 9-10** : Relations visuelles et permissions RBAC
+- **Jour 11-12** : Upload de fichiers avec transformations automatiques
 - **POCs** : OAuth complet, gestion fichiers
 
 ### Phase 3: Frontend Moderne (Semaine 5-6)
@@ -72,7 +72,7 @@
 doc/
 ├── 00-plan-organisation-cours.md          # Ce fichier
 ├── 01-architecture/                       # Concepts généraux
-├── 02-strapi/                            # Backend spécifique  
+├── 02-directus/                          # Backend spécifique  
 ├── 03-angular/                           # Frontend spécifique
 ├── 04-integration/                       # Communication API
 ├── 05-projets/                          # Specs des 2 projets
@@ -85,7 +85,7 @@ doc/
 ### Structure poc/
 ```
 poc/
-├── strapi-backend/                       # Base commune
+├── directus-backend/                     # Base commune
 ├── angular-frontend/                     # Base commune  
 ├── auth-poc/                            # OAuth2 complet
 ├── file-upload-poc/                     # Gestion fichiers
@@ -133,7 +133,7 @@ poc/
 ## 🎯 Objectifs d'Apprentissage
 
 ### Techniques
-- Maîtriser Strapi v5 (composants, plugins, API)
+- Maîtriser Directus v11 (collections, extensions, API)
 - Maîtriser Angular v20 (standalone, signals, moderne)  
 - Comprendre architecture fullstack moderne
 - Intégrer authentification OAuth2

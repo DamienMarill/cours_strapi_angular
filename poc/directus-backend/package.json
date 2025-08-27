@@ -1,0 +1,35 @@
+{
+  "name": "directus-backend",
+  "version": "1.0.0",
+  "description": "Directus backend for cours Strapi/Angular - Educational POC",
+  "scripts": {
+    "dev": "directus start",
+    "build": "directus bootstrap",
+    "start": "directus start",
+    "init": "directus init",
+    "bootstrap": "directus bootstrap"
+  },
+  "keywords": [
+    "directus",
+    "cms",
+    "headless",
+    "api",
+    "education"
+  ],
+  "author": "",
+  "license": "ISC",
+  "type": "commonjs",
+  "engines": {
+    "node": ">=18.13.0 <=22.x.x",
+    "npm": ">=9.0.0"
+  },
+  "dependencies": {
+    "@directus/sdk": "^20.0.2",
+    "directus": "^11.10.2",
+    "sqlite3": "^5.1.7"
+  },
+  "devDependencies": {
+    "@types/node": "^22.18.0",
+    "typescript": "^5.9.2"
+  }
+}

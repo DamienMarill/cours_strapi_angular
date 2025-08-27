@@ -1,16 +1,16 @@
 # 🎯 Concepts Clés des Frameworks - Guide d'Architecture
 
 ## Vue d'ensemble
-Ce document liste les **concepts essentiels** de Strapi et Angular nécessaires pour couvrir **90% des cas d'usage** en développement fullstack moderne. L'objectif est la **maîtrise des fondamentaux** pour l'autonomie future.
+Ce document liste les **concepts essentiels** de Directus et Angular nécessaires pour couvrir **90% des cas d'usage** en développement fullstack moderne. L'objectif est la **maîtrise des fondamentaux** pour l'autonomie future.
 
 ---
 
-## 🚀 **STRAPI v5 - Concepts Essentiels (Backend)**
+## 🚀 **DIRECTUS v11 - Concepts Essentiels (Backend)**
 
-### 🗄️ **1. Content-Types (Modèles de Données)**
-**Concept** : Structure des données de l'application
+### 🗄️ **1. Collections (Modèles de Données)**
+**Concept** : Collections de données avec schéma dynamique
 ```javascript
-// Exemple Content-Type "Article"
+// Exemple Collection "Article"
 {
   title: "string",
   content: "text", 
@@ -18,9 +18,9 @@ Ce document liste les **concepts essentiels** de Strapi et Angular nécessaires 
   published: "boolean"
 }
 ```
-**90% Usage** : Définir tous vos modèles métier (User, Product, Order, etc.)
+**90% Usage** : Créer collections via interface visuelle ou API
 
-### 🔗 **2. Relations entre Content-Types**
+### 🔗 **2. Relations entre Collections**
 **Types essentiels** :
 - **One-to-One** : User → Profile
 - **One-to-Many** : User → Articles (1 user, plusieurs articles)
@@ -28,55 +28,66 @@ Ce document liste les **concepts essentiels** de Strapi et Angular nécessaires 
 
 **90% Usage** : Lier vos données logiquement (author, categories, likes...)
 
-### 🌐 **3. API REST Automatique**
-**Concept** : Strapi génère automatiquement les endpoints
+### 🌐 **3. API REST & GraphQL Automatiques**
+**Concept** : Directus génère REST et GraphQL automatiquement
 ```
-GET    /api/articles        # Lister
-POST   /api/articles        # Créer
-GET    /api/articles/:id    # Détail
-PUT    /api/articles/:id    # Modifier
-DELETE /api/articles/:id    # Supprimer
-```
-**90% Usage** : CRUD complet sans code backend
+GET    /items/articles        # Lister
+POST   /items/articles        # Créer
+GET    /items/articles/:id    # Détail
+PATCH  /items/articles/:id    # Modifier
+DELETE /items/articles/:id    # Supprimer
 
-### 🔒 **4. Authentification & Permissions**
+# GraphQL disponible aussi sur /graphql
+```
+**90% Usage** : CRUD complet + GraphQL sans code backend
+
+### 🔒 **4. Authentification & Rôles (RBAC)**
 **Concepts clés** :
 - **JWT Tokens** pour l'authentification
-- **Rôles** (Public, Authenticated, Admin)
-- **Permissions par Content-Type** et action
-- **Providers OAuth** (Google, GitHub...)
+- **Rôles personnalisés** avec permissions granulaires
+- **RBAC** (Role-Based Access Control) visuel
+- **Providers OAuth** (Google, GitHub, Discord...)
+- **Admin Panel** intégré pour gestion utilisateurs
 
 **90% Usage** : Sécuriser votre app et gérer les utilisateurs
 
-### 📁 **5. Upload & Media Library**
-**Concept** : Gestion des fichiers (images, audio, documents)
+### 📁 **5. Gestion de Fichiers & Transformations**
+**Concept** : Upload avancé avec transformations automatiques
 ```javascript
-// Champ media
-image: "media" // Single file
-gallery: "media" // Multiple files
+// Champ fichier
+image: {
+  type: "file",
+  transforms: ["thumbnail", "webp"]
+}
+gallery: {
+  type: "files", // Multiple
+  accept: "image/*"
+}
 ```
-**90% Usage** : Tous les uploads d'images, fichiers, avatars...
+**90% Usage** : Upload avec redimensionnement, optimisation, et métadonnées automatiques
 
-### 🔧 **6. Populate & Filtres**
-**Populate** : Charger les relations
+### 🔧 **6. Relations & Filtres Avancés**
+**Fields Parameter** : Charger les relations
 ```javascript
-GET /api/articles?populate=author,tags
+GET /items/articles?fields=*,author.*,tags.*
 ```
-**Filtres** : Recherche et tri
+**Filtres** : Recherche complexe et tri
 ```javascript  
-GET /api/articles?filters[title][$contains]=angular&sort=createdAt:desc
+GET /items/articles?filter[title][_contains]=angular&sort=-date_created
 ```
 **90% Usage** : Récupérer exactement les données voulues
 
-### ⚙️ **7. Middlewares & Lifecycle Hooks**
-**Concept** : Intercepter les requêtes pour logique custom
+### ⚙️ **7. Hooks & Extensions**
+**Concept** : Hooks d'événements et extensions personnalisées
 ```javascript
-// Before create
-beforeCreate(event) {
-  event.params.data.slug = slugify(event.params.data.title);
+// Hook d'événement
+export default {
+  'items.create': (payload) => {
+    payload.slug = slugify(payload.title);
+  }
 }
 ```
-**90% Usage** : Validation custom, transformation données, logs...
+**90% Usage** : Validation custom, transformation données, audit trail...
 
 ---
 
@@ -190,15 +201,15 @@ export class AuthGuard implements CanActivate {
 
 ### 📋 **Mapping Backend ↔ Frontend**
 
-| **Concept Strapi** | **↔** | **Concept Angular** | **Usage Commun** |
-|-------------------|-------|-------------------|------------------|
-| Content-Type | ↔ | Interface/Model | Définition des données |
-| API Endpoints | ↔ | HTTP Services | Communication données |
-| Relations | ↔ | Observables/Signals | Données liées |
-| Authentication | ↔ | Guards + JWT | Sécurité utilisateur |
-| Upload API | ↔ | FormData + HTTP | Gestion fichiers |
-| Permissions | ↔ | Route Guards | Contrôle d'accès |
-| Populate | ↔ | HTTP Params | Optimisation requêtes |
+| **Concept Directus** | **↔** | **Concept Angular** | **Usage Commun** |
+|---------------------|-------|-------------------|------------------|
+| Collections | ↔ | Interface/Model | Définition des données |
+| API REST/GraphQL | ↔ | HTTP Services | Communication données |
+| Relations visuelles | ↔ | Observables/Signals | Données liées |
+| RBAC | ↔ | Guards + JWT | Sécurité utilisateur |
+| File Management | ↔ | FormData + HTTP | Gestion fichiers avancée |
+| Rôles & Permissions | ↔ | Route Guards | Contrôle d'accès granulaire |
+| Fields Parameter | ↔ | HTTP Params | Optimisation requêtes |
 
 ### 🔄 **Flux de Données Typique**
 
@@ -206,8 +217,8 @@ export class AuthGuard implements CanActivate {
 flowchart LR
     A[Angular Component] --> B[Angular Service]
     B --> C[HTTP Interceptor]  
-    C --> D[Strapi API]
-    D --> E[Content-Type]
+    C --> D[Directus API]
+    D --> E[Collection]
     E --> F[Database]
     F --> E
     E --> D
@@ -232,13 +243,13 @@ src/
 │   └── layouts/       # Layouts généraux
 ```
 
-**Structure Backend (Strapi)** :
+**Structure Backend (Directus)** :
 ```
-strapi-app/
-├── src/api/           # Content-Types générés
-├── config/           # Configuration (DB, auth, etc.)
-├── middlewares/      # Logique transversale
-└── extensions/       # Customisations Strapi
+directus-backend/
+├── .env              # Configuration environnement
+├── data.db           # Base SQLite
+├── uploads/          # Fichiers uploadés
+└── extensions/       # Extensions personnalisées
 ```
 
 ---
@@ -267,7 +278,8 @@ strapi-app/
 - Formulaires typés et validés
 
 ### 🚀 **Le 10% restant** (à apprendre au besoin) :
-- Plugins Strapi avancés
+- Extensions Directus avancées
+- Flows (automatisations visuelles)
 - Optimisations performance poussées  
 - Architecture micro-services
 - Tests automatisés avancés
@@ -278,19 +290,19 @@ strapi-app/
 ## 💡 **Stratégie d'Apprentissage**
 
 ### **Phase 1: Fondations** (Concepts 1-3)
-- Content-Types + API REST (Strapi)
+- Collections + API REST/GraphQL (Directus)
 - Components + Services (Angular)
 - **Objectif** : CRUD basique fonctionnel
 
 ### **Phase 2: Interactions** (Concepts 4-6)  
-- Auth + Permissions (Strapi)
+- Auth + RBAC (Directus)
 - Forms + Router (Angular)
 - **Objectif** : Application utilisateur complète
 
 ### **Phase 3: Optimisation** (Concepts 7-8)
-- Hooks + Upload (Strapi)  
+- Hooks + File Management (Directus)  
 - State + Guards (Angular)
-- **Objectif** : Application production-ready
+- **Objectif** : Application production-ready avec interface admin
 
 ---
 

@@ -40,41 +40,45 @@ Application web pour créer, partager et gérer des memes avec une communauté d
 - [ ] PWA support
 - [ ] Mode hors-ligne
 
-## 📊 Modèle de Données Strapi
+## 📊 Modèle de Données Directus
 
-### Content-Types
+### Collections
 
-#### Meme
+#### memes
 ```javascript
 {
+  id: "uuid", // primary key
   title: "string", // required
-  image: "media", // required
+  image: "file", // required, with transforms
   topText: "string",
   bottomText: "string", 
-  tags: "relation(Tag, many-to-many)",
-  author: "relation(User, many-to-one)",
-  likes: "relation(Like, one-to-many)",
+  tags: "m2m(tags)", // many-to-many relation
+  author: "m2o(directus_users)", // relation to users
+  likes: "o2m(likes)", // one-to-many
   isPublic: "boolean", // default: true
-  createdAt: "datetime",
-  updatedAt: "datetime"
+  date_created: "datetime", // auto
+  date_updated: "datetime" // auto
 }
 ```
 
-#### Tag
+#### tags
 ```javascript
 {
+  id: "uuid",
   name: "string", // unique, required
-  color: "string", // hex color
+  color: "color", // color picker field
   description: "text",
-  memes: "relation(Meme, many-to-many)"
+  memes: "m2m(memes)" // many-to-many relation
 }
 ```
 
-#### Like
+#### likes
 ```javascript
 {
-  user: "relation(User, many-to-one)",
-  meme: "relation(Meme, many-to-one)"
+  id: "uuid",
+  user: "m2o(directus_users)",
+  meme: "m2o(memes)",
+  date_created: "datetime"
 }
 ```
 
@@ -94,17 +98,22 @@ Application web pour créer, partager et gérer des memes avec une communauté d
 - `LikeButton` - Bouton like/dislike animé
 - `SearchFilters` - Filtres de recherche
 
-## 🔒 Permissions Strapi
+## 🔒 Permissions Directus (RBAC)
 
 ### Rôles
-- **Public** : View memes publics, recherche
-- **Authenticated** : CRUD ses memes, likes, comments
-- **Moderator** : Modération content
-- **Admin** : Gestion complète
+- **Public** : Read memes publics seulement
+- **User** : CRUD ses propres memes, likes, voir les publics
+- **Moderator** : Read/Update tous les memes, modération
+- **Administrator** : Full access
 
-### Politiques
-- Seul l'auteur peut modifier/supprimer son meme
-- Memes privés visibles par l'auteur uniquement
+### Permissions
+- **memes** : Lecture libre si public, écriture owner only
+- **likes** : CRUD owner only
+- **tags** : Read all, Create/Update auth required
+
+### Filtres Dynamiques
+- Memes publics : `isPublic = true`
+- Memes personnels : `author = $CURRENT_USER`
 
 ## 📱 Responsive Design
 
