@@ -7,7 +7,10 @@
       "Bash(npm run install:all:*)",
       "Bash(npm run init:*)",
       "Bash(npm run bootstrap:*)",
-      "Bash(timeout 10 npm run directus:dev)"
+      "Bash(timeout 10 npm run directus:dev)",
+      "WebSearch",
+      "WebFetch(domain:github.com)",
+      "WebFetch(domain:raw.githubusercontent.com)"
     ],
     "deny": [],
     "ask": []

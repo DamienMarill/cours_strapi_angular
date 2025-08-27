@@ -12,17 +12,17 @@ class UTAUEditor {
         this.resizeHandle = null; // 'left' ou 'right'
         this.gridSnap = 5; // Pixels de snap pour la grille (plus fin)
         
-        // Configuration du piano roll (2 octaves)
+        // Configuration du piano roll (2 octaves) - Ajusté pour la tessitura de Teto
         this.notes = ['C', 'C♯', 'D', 'D♯', 'E', 'F', 'F♯', 'G', 'G♯', 'A', 'A♯', 'B'];
-        this.octaves = [5, 4]; // Du plus aigu au plus grave
+        this.octaves = [4, 3]; // Du plus aigu au plus grave - Centré sur les échantillons Teto (~308Hz = D♯4)
         this.pianoKeys = [];
         
-        // Notes UTAU avec phonèmes (comme dans la maquette)
+        // Notes UTAU avec phonèmes (enchaînement fluide sans blancs)
         this.utauNotes = [
-            { id: 1, syllable: 'ka', start: 50, width: 80, pitch: this.noteToFreq('A4'), row: 15 },
-            { id: 2, syllable: 'te', start: 150, width: 60, pitch: this.noteToFreq('C5'), row: 10 },
-            { id: 3, syllable: 'to', start: 230, width: 70, pitch: this.noteToFreq('E5'), row: 6 },
-            { id: 4, syllable: 'chan', start: 320, width: 100, pitch: this.noteToFreq('G4'), row: 18 }
+            { id: 1, syllable: 'ka', start: 50, width: 80, pitch: this.noteToFreq('D4'), row: 9 },
+            { id: 2, syllable: 'te', start: 130, width: 60, pitch: this.noteToFreq('C4'), row: 10 },
+            { id: 3, syllable: 'to', start: 190, width: 70, pitch: this.noteToFreq('D4'), row: 9 },
+            { id: 4, syllable: 'chan', start: 260, width: 100, pitch: this.noteToFreq('F4'), row: 7 }
         ];
         
         // ID counter pour nouvelles notes
@@ -255,6 +255,9 @@ class UTAUEditor {
             
             if (successful > 0) {
                 this.updateStatus(`✅ Teto chargée ! ${successful}/${total} échantillons (≧◡≦)`, 'ready');
+                
+                // Tenter de charger les fréquences depuis les fichiers .frq
+                await this.loadFrequenciesFromFrq();
             } else {
                 throw new Error('Aucun échantillon chargé');
             }
@@ -303,6 +306,48 @@ class UTAUEditor {
         document.getElementById('deleteBtn').addEventListener('click', () => {
             if (this.selectedNote !== null) {
                 this.deleteSelectedNote();
+            }
+        });
+        
+        // Boutons outils UTAU
+        document.getElementById('debugFrqBtn').addEventListener('click', () => {
+            window.DEBUG_FRQ = !window.DEBUG_FRQ;
+            const btn = document.getElementById('debugFrqBtn');
+            if (window.DEBUG_FRQ) {
+                btn.textContent = '🔍 Debug activé (rechargez Teto)';
+                btn.style.background = '#d4edda';
+                btn.style.borderColor = '#c3e6cb';
+                btn.style.color = '#155724';
+                console.log('🔧 Debug .frq activé - rechargez Teto pour voir les détails !');
+            } else {
+                btn.textContent = '📊 Debug .frq files (console)';
+                btn.style.background = '#fff3cd';
+                btn.style.borderColor = '#ffc107';  
+                btn.style.color = '#856404';
+                console.log('🔧 Debug .frq désactivé');
+            }
+        });
+        
+        document.getElementById('convertVoicebankBtn').addEventListener('click', async () => {
+            if (!this.isAudioInitialized) {
+                this.updateStatus('Initialisez d\'abord l\'audio pour charger les données ! 🔧', 'error');
+                return;
+            }
+            
+            const btn = document.getElementById('convertVoicebankBtn');
+            const originalText = btn.textContent;
+            btn.textContent = '⏳ Conversion en cours...';
+            btn.disabled = true;
+            
+            try {
+                await this.convertVoicebankToJson('teto');
+                this.updateStatus('✅ Voicebank exportée en JSON ! Vérifiez vos téléchargements', 'ready');
+            } catch (error) {
+                console.error('Erreur conversion:', error);
+                this.updateStatus('❌ Erreur lors de la conversion', 'error');
+            } finally {
+                btn.textContent = originalText;
+                btn.disabled = false;
             }
         });
         
@@ -868,6 +913,304 @@ class UTAUEditor {
         
         this.updateStatus(`Note "${originalNote.syllable}" dupliquée ! 📋`, 'ready');
     }
+    
+    
+    // Parser CORRECT pour fichiers FREQ0003 (.frq) - Basé sur frq_reader.py  
+    async parseFrqFile(file) {
+        return new Promise((resolve, reject) => {
+            const reader = new FileReader();
+            
+            reader.onload = (event) => {
+                try {
+                    const arrayBuffer = event.target.result;
+                    const dataView = new DataView(arrayBuffer);
+                    let offset = 0;
+                    
+                    // 1. Header (8 bytes)
+                    const header = new TextDecoder().decode(arrayBuffer.slice(0, 8));
+                    if (!header.startsWith('FREQ0003')) {
+                        throw new Error('Format de fichier .frq invalide');
+                    }
+                    offset += 8;
+                    
+                    // 2. Samples per frequency (4 bytes, little-endian int32)
+                    const samplesPerFreq = dataView.getInt32(offset, true);
+                    offset += 4;
+                    
+                    // 3. Average frequency (8 bytes, little-endian double)
+                    const avgFrequency = dataView.getFloat64(offset, true);
+                    offset += 8;
+                    
+                    // 4. Reserved space (16 bytes) - ignorer
+                    offset += 16;
+                    
+                    // 5. Number of chunks (4 bytes, little-endian int32)
+                    const numChunks = dataView.getInt32(offset, true);
+                    offset += 4;
+                    
+                    console.log(`📊 FREQ0003 - Header: ${header.trim()}`);
+                    console.log(`📊 Samples per freq: ${samplesPerFreq}`);
+                    console.log(`📊 Average frequency: ${avgFrequency.toFixed(2)} Hz`);
+                    console.log(`📊 Number of chunks: ${numChunks}`);
+                    
+                    // 6. Lire tous les chunks (frequency + amplitude pairs)
+                    const chunks = [];
+                    const frequencies = [];
+                    const amplitudes = [];
+                    
+                    for (let i = 0; i < numChunks; i++) {
+                        // Frequency (8 bytes double)
+                        const frequency = dataView.getFloat64(offset, true);
+                        offset += 8;
+                        
+                        // Amplitude (8 bytes double)  
+                        const amplitude = dataView.getFloat64(offset, true);
+                        offset += 8;
+                        
+                        chunks.push({ frequency, amplitude });
+                        
+                        // Filtre les fréquences valides pour statistiques
+                        if (frequency > 0 && frequency < 2000) {
+                            frequencies.push(frequency);
+                            amplitudes.push(amplitude);
+                        }
+                    }
+                    
+                    if (frequencies.length === 0) {
+                        throw new Error('Aucune fréquence valide trouvée dans les chunks');
+                    }
+                    
+                    // Analyse statistique des fréquences 
+                    const sortedFreqs = frequencies.sort((a, b) => a - b);
+                    const medianFreq = sortedFreqs.length % 2 === 0 
+                        ? (sortedFreqs[Math.floor(sortedFreqs.length/2) - 1] + sortedFreqs[Math.floor(sortedFreqs.length/2)]) / 2
+                        : sortedFreqs[Math.floor(sortedFreqs.length/2)];
+                    
+                    // Utiliser l'average frequency du header si disponible, sinon médiane calculée
+                    const baseFrequency = avgFrequency > 0 ? avgFrequency : medianFreq;
+                    
+                    console.log(`🎵 Base frequency (header): ${avgFrequency.toFixed(2)} Hz`);
+                    console.log(`🎵 Median frequency (calculated): ${medianFreq.toFixed(2)} Hz`);
+                    console.log(`🎵 Using base frequency: ${baseFrequency.toFixed(2)} Hz`);
+                    
+                    resolve({
+                        header: header.trim(),
+                        samplesPerFreq: samplesPerFreq,
+                        avgFrequency: avgFrequency,
+                        numChunks: numChunks,
+                        baseFrequency: baseFrequency,
+                        chunks: chunks,
+                        frequencies: frequencies,
+                        amplitudes: amplitudes,
+                        minFreq: Math.min(...sortedFreqs),
+                        maxFreq: Math.max(...sortedFreqs),
+                        medianFreq: medianFreq
+                    });
+                    
+                } catch (error) {
+                    console.error('Erreur parsing .frq:', error);
+                    reject(error);
+                }
+            };
+            
+            reader.onerror = () => reject(new Error('Erreur lecture fichier'));
+            reader.readAsArrayBuffer(file);
+        });
+    }
+    
+    // Charger les fréquences de base depuis les fichiers .frq
+    async loadFrequenciesFromFrq() {
+        const frqFiles = [
+            { phoneme: 'a', path: 'assets/teto-samples/a_wav.frq' },
+            { phoneme: 'ka', path: 'assets/teto-samples/ka_wav.frq' },
+            { phoneme: 'te', path: 'assets/teto-samples/te_wav.frq' },
+            { phoneme: 'to', path: 'assets/teto-samples/to_wav.frq' },
+            { phoneme: 'chan', path: 'assets/teto-samples/chan_wav.frq' },
+            { phoneme: 'ni', path: 'assets/teto-samples/ni_wav.frq' }
+        ];
+        
+        this.realTetoFrequencies = {};
+        
+        for (const frqFile of frqFiles) {
+            try {
+                const response = await fetch(frqFile.path);
+                if (response.ok) {
+                    const blob = await response.blob();
+                    const frqData = await this.parseFrqFile(blob);
+                    
+                    this.realTetoFrequencies[frqFile.phoneme] = frqData.baseFrequency;
+                    console.log(`✅ ${frqFile.phoneme}: ${frqData.baseFrequency.toFixed(2)} Hz (${frqData.numChunks} chunks)`);
+                    
+                    // Sauvegarder les données complètes pour débogage (optionnel)
+                    if (window.DEBUG_FRQ) {
+                        this.exportFrqToJson(frqFile.phoneme, frqData);
+                    }
+                }
+            } catch (error) {
+                console.warn(`⚠️ Impossible de charger ${frqFile.path}:`, error.message);
+            }
+        }
+        
+        if (Object.keys(this.realTetoFrequencies).length > 0) {
+            console.log('🎤 Fréquences .frq chargées:', this.realTetoFrequencies);
+            const frqCount = Object.keys(this.realTetoFrequencies).length;
+            this.updateStatus(`✅ Teto + ${frqCount} fichiers .frq chargés ! Pitch ultra-précis (≧▽≦)`, 'ready');
+        }
+    }
+    
+    // Version améliorée qui utilise les .frq si disponibles
+    getTetoBasePitch(syllable) {
+        // D'abord essayer les données .frq réelles
+        if (this.realTetoFrequencies && this.realTetoFrequencies[syllable]) {
+            const frqFreq = this.realTetoFrequencies[syllable];
+            console.log(`🎵 UTILISE .frq: ${syllable} = ${frqFreq.toFixed(2)} Hz (réel)`);
+            return frqFreq;
+        }
+        
+        // Fallback sur le mapping manuel si pas de .frq
+        const tetoPitchMap = {
+            // Voyelles - fréquences naturelles moyennes de Teto
+            'a': 220.0,  'i': 246.9,  'u': 196.0,  'e': 220.0,  'o': 207.7,
+            // Syllabes Ka
+            'ka': 196.0, 'ki': 220.0,  'ku': 185.0, 'ke': 207.7, 'ko': 185.0,
+            // Syllabes Ta
+            'ta': 185.0, 'chi': 207.7, 'tsu': 174.6, 'te': 196.0, 'to': 174.6,
+            // Syllabes Na
+            'na': 185.0, 'ni': 196.0, 'nu': 174.6, 'ne': 185.0, 'no': 174.6,
+            // Autres phonèmes
+            'n': 146.8,  'wa': 207.7, 'ya': 220.0, 'yu': 196.0, 'yo': 185.0,
+            'ra': 185.0, 'ri': 196.0, 'ru': 174.6, 're': 185.0, 'ro': 174.6,
+            // Spéciaux Teto
+            'chan': 246.9, 'nyan': 261.6
+        };
+        
+        const manualFreq = tetoPitchMap[syllable] || 196.0;
+        console.log(`🎵 UTILISE manuel: ${syllable} = ${manualFreq.toFixed(2)} Hz (fallback)`);
+        return manualFreq;
+    }
+    
+    // 🔧 UTILITAIRES DE CONVERSION .frq → JSON
+    
+    // Exporter un fichier .frq vers JSON
+    exportFrqToJson(phoneme, frqData) {
+        const jsonData = {
+            phoneme: phoneme,
+            timestamp: new Date().toISOString(),
+            format: frqData.header,
+            metadata: {
+                samplesPerFreq: frqData.samplesPerFreq,
+                avgFrequency: frqData.avgFrequency,
+                numChunks: frqData.numChunks,
+                baseFrequency: frqData.baseFrequency,
+                minFreq: frqData.minFreq,
+                maxFreq: frqData.maxFreq,
+                medianFreq: frqData.medianFreq
+            },
+            chunks: frqData.chunks,
+            statistics: {
+                totalFrequencies: frqData.frequencies.length,
+                averageAmplitude: frqData.amplitudes.reduce((a, b) => a + b, 0) / frqData.amplitudes.length,
+                frequencyRange: frqData.maxFreq - frqData.minFreq
+            }
+        };
+        
+        // Créer le blob et télécharger
+        const jsonString = JSON.stringify(jsonData, null, 2);
+        const blob = new Blob([jsonString], { type: 'application/json' });
+        const url = URL.createObjectURL(blob);
+        
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = `${phoneme}_frequencies.json`;
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+        URL.revokeObjectURL(url);
+        
+        console.log(`💾 Exporté: ${phoneme}_frequencies.json`);
+    }
+    
+    // Convertir toute une voicebank .frq vers JSON optimisé
+    async convertVoicebankToJson(voicebankName = 'teto') {
+        const allData = {
+            voicebank: voicebankName,
+            timestamp: new Date().toISOString(),
+            format: 'FREQ0003',
+            phonemes: {}
+        };
+        
+        console.log(`🔄 Conversion voicebank ${voicebankName} en cours...`);
+        
+        // Conversion des fichiers .frq disponibles
+        for (const [phoneme, frequency] of Object.entries(this.realTetoFrequencies)) {
+            allData.phonemes[phoneme] = {
+                baseFrequency: frequency,
+                note: this.frequencyToNote(frequency)
+            };
+        }
+        
+        // Ajouter les fallbacks du mapping manuel
+        const manualMapping = {
+            'a': 220.0, 'i': 246.9, 'u': 196.0, 'e': 220.0, 'o': 207.7,
+            'ka': 196.0, 'ki': 220.0, 'ku': 185.0, 'ke': 207.7, 'ko': 185.0,
+            'ta': 185.0, 'chi': 207.7, 'tsu': 174.6, 'te': 196.0, 'to': 174.6,
+            'na': 185.0, 'ni': 196.0, 'nu': 174.6, 'ne': 185.0, 'no': 174.6,
+            'n': 146.8, 'wa': 207.7, 'ya': 220.0, 'yu': 196.0, 'yo': 185.0,
+            'ra': 185.0, 'ri': 196.0, 'ru': 174.6, 're': 185.0, 'ro': 174.6,
+            'chan': 246.9, 'nyan': 261.6
+        };
+        
+        for (const [phoneme, frequency] of Object.entries(manualMapping)) {
+            if (!allData.phonemes[phoneme]) {
+                allData.phonemes[phoneme] = {
+                    baseFrequency: frequency,
+                    note: this.frequencyToNote(frequency),
+                    source: 'manual_mapping'
+                };
+            }
+        }
+        
+        // Statistiques globales
+        const frequencies = Object.values(allData.phonemes).map(p => p.baseFrequency);
+        allData.statistics = {
+            totalPhonemes: Object.keys(allData.phonemes).length,
+            fromFrqFiles: Object.keys(this.realTetoFrequencies).length,
+            fromManualMapping: Object.keys(allData.phonemes).length - Object.keys(this.realTetoFrequencies).length,
+            avgFrequency: frequencies.reduce((a, b) => a + b, 0) / frequencies.length,
+            minFrequency: Math.min(...frequencies),
+            maxFrequency: Math.max(...frequencies)
+        };
+        
+        // Export JSON optimisé
+        const jsonString = JSON.stringify(allData, null, 2);
+        const blob = new Blob([jsonString], { type: 'application/json' });
+        const url = URL.createObjectURL(blob);
+        
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = `${voicebankName}_voicebank_frequencies.json`;
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+        URL.revokeObjectURL(url);
+        
+        console.log(`✅ Voicebank ${voicebankName} convertie: ${Object.keys(allData.phonemes).length} phonèmes`);
+        console.log('📊 Statistiques:', allData.statistics);
+        
+        return allData;
+    }
+    
+    // Convertir fréquence en nom de note musical
+    frequencyToNote(freq) {
+        const A4 = 440;
+        const noteNames = ['C', 'C#', 'D', 'D#', 'E', 'F', 'F#', 'G', 'G#', 'A', 'A#', 'B'];
+        
+        const semitonesFromA4 = Math.round(12 * Math.log2(freq / A4));
+        const octave = Math.floor((semitonesFromA4 + 9) / 12) + 4;
+        const noteIndex = ((semitonesFromA4 + 9) % 12 + 12) % 12;
+        
+        return noteNames[noteIndex] + octave;
+    }
 
     // Jouer une note avec les vrais échantillons de Teto
     async playNote(frequency, duration = 0.5, syllable = null) {
@@ -885,9 +1228,11 @@ class UTAUEditor {
             if (player) {
                 try {
                     // Calculer le ratio de pitch pour ajuster à la fréquence désirée
-                    // Note de base de Teto est autour de C4 (261.63 Hz)
-                    const baseTetoPitch = 261.63;
+                    // Utiliser la fréquence de base spécifique à ce phonème
+                    const baseTetoPitch = this.getTetoBasePitch(syllable);
                     const pitchRatio = frequency / baseTetoPitch;
+                    
+                    console.log(`🎤 AUDIO: ${syllable} | Base: ${baseTetoPitch.toFixed(2)} Hz | Cible: ${frequency.toFixed(2)} Hz | Ratio: ${pitchRatio.toFixed(3)}x`);
                     
                     // Ajuster la vitesse de lecture pour changer le pitch (effet chipmunk acceptable)
                     player.playbackRate = pitchRatio;
@@ -1029,8 +1374,8 @@ class UTAUEditor {
             
             if (player) {
                 try {
-                    // Calculer le ratio de pitch
-                    const baseTetoPitch = 261.63;
+                    // Obtenir la fréquence de base réelle pour ce phonème de Teto
+                    const baseTetoPitch = this.getTetoBasePitch(syllable);
                     const pitchRatio = frequency / baseTetoPitch;
                     
                     // Cloner le player pour éviter les conflits
