@@ -309,6 +309,19 @@ class UTAUEditor {
             }
         });
         
+        // Boutons génération WAV
+        document.getElementById('generateWavBtn').addEventListener('click', () => {
+            this.generateMixedWav();
+        });
+        
+        document.getElementById('previewMixedBtn').addEventListener('click', () => {
+            this.previewMixedWav();
+        });
+        
+        document.getElementById('downloadWavBtn').addEventListener('click', () => {
+            this.downloadMixedWav();
+        });
+        
         // Boutons outils UTAU
         document.getElementById('debugFrqBtn').addEventListener('click', () => {
             window.DEBUG_FRQ = !window.DEBUG_FRQ;
@@ -1438,6 +1451,202 @@ class UTAUEditor {
         const status = document.getElementById('status');
         status.textContent = message;
         status.className = `status ${type}`;
+    }
+
+    // 🎵 GÉNÉRATION WAV UNIQUE - Mixage de tous les échantillons en un seul fichier
+    
+    async generateMixedWav() {
+        if (this.utauNotes.length === 0) {
+            this.updateStatus('Aucune note à générer !', 'error');
+            return;
+        }
+
+        this.updateStatus('🎛️ Génération du WAV mixé...', 'ready');
+
+        try {
+            // Calculer la durée totale nécessaire
+            const totalDuration = this.calculateTotalDuration();
+            const sampleRate = 44100;
+            const channels = 2; // Stéréo
+            
+            // Créer un AudioContext offline pour le rendu
+            const offlineContext = new OfflineAudioContext(channels, totalDuration * sampleRate, sampleRate);
+            
+            // Créer un buffer de destination
+            const mixBuffer = offlineContext.createBuffer(channels, totalDuration * sampleRate, sampleRate);
+            
+            // Mixer chaque note
+            for (const note of this.utauNotes) {
+                await this.mixNoteToBuffer(note, mixBuffer, sampleRate);
+            }
+            
+            // Créer le fichier WAV
+            const wavBlob = this.bufferToWav(mixBuffer);
+            this.currentMixedWav = wavBlob;
+            
+            // Créer un player pour le preview
+            const audioUrl = URL.createObjectURL(wavBlob);
+            this.mixedAudio = new Audio(audioUrl);
+            
+            this.updateStatus('✅ WAV mixé généré ! Cliquez Preview pour écouter', 'ready');
+            
+            // Activer les boutons preview et download
+            const previewBtn = document.getElementById('previewMixedBtn');
+            const downloadBtn = document.getElementById('downloadWavBtn');
+            if (previewBtn) previewBtn.disabled = false;
+            if (downloadBtn) downloadBtn.disabled = false;
+            
+            return wavBlob;
+            
+        } catch (error) {
+            console.error('Erreur génération WAV:', error);
+            this.updateStatus('❌ Erreur génération WAV', 'error');
+        }
+    }
+    
+    // Calculer la durée totale nécessaire
+    calculateTotalDuration() {
+        if (this.utauNotes.length === 0) return 1;
+        
+        let maxEnd = 0;
+        this.utauNotes.forEach(note => {
+            const endTime = (note.start / this.gridSnap * 0.1) + (note.width / this.gridSnap * 0.1);
+            maxEnd = Math.max(maxEnd, endTime);
+        });
+        
+        return maxEnd + 1; // +1 seconde de marge
+    }
+    
+    // Mixer une note dans le buffer principal
+    async mixNoteToBuffer(note, mixBuffer, sampleRate) {
+        const player = this.tetoVoicebank[note.syllable];
+        if (!player || !player.buffer) return;
+        
+        // Calculer les paramètres de timing
+        const startTime = note.start / this.gridSnap * 0.1;
+        const duration = note.width / this.gridSnap * 0.1;
+        
+        // Calculer le pitch ratio
+        const baseTetoPitch = this.getTetoBasePitch(note.syllable);
+        const pitchRatio = note.pitch / baseTetoPitch;
+        
+        // Obtenir le buffer source
+        const sourceBuffer = player.buffer;
+        const sourceData = sourceBuffer.getChannelData(0);
+        
+        // Calculer les positions dans le buffer de mix
+        const startSample = Math.floor(startTime * sampleRate);
+        const sourceDuration = sourceData.length / pitchRatio; // Ajusté pour le pitch
+        const targetSamples = Math.min(
+            Math.floor(duration * sampleRate),
+            Math.floor(sourceDuration)
+        );
+        
+        // Mixer les données avec pitch shifting
+        for (let channel = 0; channel < mixBuffer.numberOfChannels; channel++) {
+            const mixData = mixBuffer.getChannelData(channel);
+            
+            for (let i = 0; i < targetSamples; i++) {
+                const mixIndex = startSample + i;
+                if (mixIndex >= mixData.length) break;
+                
+                // Échantillonnage avec pitch ratio (interpolation linéaire simple)
+                const sourceIndex = i * pitchRatio;
+                const sourceIndexFloor = Math.floor(sourceIndex);
+                const sourceIndexCeil = Math.min(sourceIndexFloor + 1, sourceData.length - 1);
+                
+                if (sourceIndexFloor < sourceData.length) {
+                    const fraction = sourceIndex - sourceIndexFloor;
+                    const sample = sourceData[sourceIndexFloor] * (1 - fraction) + 
+                                 sourceData[sourceIndexCeil] * fraction;
+                    
+                    // Mixer avec atténuation pour éviter la saturation
+                    mixData[mixIndex] += sample * 0.7;
+                }
+            }
+        }
+    }
+    
+    // Convertir AudioBuffer vers WAV blob
+    bufferToWav(buffer) {
+        const length = buffer.length;
+        const sampleRate = buffer.sampleRate;
+        const channels = buffer.numberOfChannels;
+        
+        // Créer le buffer WAV
+        const arrayBuffer = new ArrayBuffer(44 + length * channels * 2);
+        const view = new DataView(arrayBuffer);
+        
+        // Header WAV
+        const writeString = (offset, string) => {
+            for (let i = 0; i < string.length; i++) {
+                view.setUint8(offset + i, string.charCodeAt(i));
+            }
+        };
+        
+        writeString(0, 'RIFF');
+        view.setUint32(4, 36 + length * channels * 2, true);
+        writeString(8, 'WAVE');
+        writeString(12, 'fmt ');
+        view.setUint32(16, 16, true);
+        view.setUint16(20, 1, true);
+        view.setUint16(22, channels, true);
+        view.setUint32(24, sampleRate, true);
+        view.setUint32(28, sampleRate * channels * 2, true);
+        view.setUint16(32, channels * 2, true);
+        view.setUint16(34, 16, true);
+        writeString(36, 'data');
+        view.setUint32(40, length * channels * 2, true);
+        
+        // Écrire les données audio
+        let offset = 44;
+        for (let i = 0; i < length; i++) {
+            for (let channel = 0; channel < channels; channel++) {
+                const sample = Math.max(-1, Math.min(1, buffer.getChannelData(channel)[i]));
+                view.setInt16(offset, sample * 0x7FFF, true);
+                offset += 2;
+            }
+        }
+        
+        return new Blob([arrayBuffer], { type: 'audio/wav' });
+    }
+    
+    // Preview du WAV mixé
+    previewMixedWav() {
+        if (this.mixedAudio) {
+            if (this.mixedAudio.paused) {
+                this.mixedAudio.currentTime = 0;
+                this.mixedAudio.play();
+                this.updateStatus('🎵 Preview WAV en cours...', 'playing');
+                
+                this.mixedAudio.onended = () => {
+                    this.updateStatus('Preview terminé ✨', 'ready');
+                };
+            } else {
+                this.mixedAudio.pause();
+                this.updateStatus('Preview pausé', 'ready');
+            }
+        } else {
+            this.updateStatus('Générez d\'abord le WAV !', 'error');
+        }
+    }
+    
+    // Télécharger le WAV généré
+    downloadMixedWav() {
+        if (this.currentMixedWav) {
+            const url = URL.createObjectURL(this.currentMixedWav);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = `teto-composition-${Date.now()}.wav`;
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+            URL.revokeObjectURL(url);
+            
+            this.updateStatus('📁 WAV téléchargé !', 'ready');
+        } else {
+            this.updateStatus('Générez d\'abord le WAV !', 'error');
+        }
     }
 
 }
