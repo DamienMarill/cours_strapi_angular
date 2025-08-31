@@ -10,7 +10,18 @@
       "Bash(timeout 10 npm run directus:dev)",
       "WebSearch",
       "WebFetch(domain:github.com)",
-      "WebFetch(domain:raw.githubusercontent.com)"
+      "WebFetch(domain:raw.githubusercontent.com)",
+      "mcp__serena__list_dir",
+      "mcp__serena__activate_project",
+      "mcp__serena__find_file",
+      "mcp__serena__read_file",
+      "mcp__serena__replace_regex",
+      "mcp__serena__create_text_file",
+      "mcp__serena__search_for_pattern",
+      "mcp__memory-plus__retrieve",
+      "mcp__context7__resolve-library-id",
+      "mcp__context7__get-library-docs",
+      "mcp__memory-plus__record"
     ],
     "deny": [],
     "ask": []
