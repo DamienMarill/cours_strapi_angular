@@ -80,9 +80,11 @@ erDiagram
         string first_name "👤 Prénom"
         string last_name "👤 Nom"
         string email UK "📧 Email (unique)"
-        string password "🔐 Mot de passe (hashé)"
+        string password "🔐 Mot de passe (hashé - optionnel pour OAuth)"
         uuid avatar FK "🖼️ Photo de profil"
         string status "⚡ Statut compte"
+        string provider "🔗 Méthode connexion (default/github/google)"
+        string external_identifier "🆔 ID externe (GitHub ID, Google ID, etc.)"
         timestamp date_created "📅 Date création"
         timestamp last_access "📅 Dernière connexion"
     }
@@ -193,20 +195,27 @@ erDiagram
 
 ### Système d'utilisateurs Directus intégré
 
-**🔑 Collection `directus_users` - Pré-existante**
+**🔑 Collection `directus_users` - Pré-existante avec support OAuth**
 
-Directus inclut par défaut un système complet de gestion des utilisateurs avec authentification, autorisation et profils. Cette collection est automatiquement créée et ne nécessite aucune configuration particulière.
+Directus inclut par défaut un système complet de gestion des utilisateurs avec authentification classique **ET OAuth** (GitHub, Google, etc.). Cette collection est automatiquement créée et gère nativement les connexions externes.
 
 **Champs principaux disponibles :**
 - `id` : UUID unique de l'utilisateur
 - `first_name` / `last_name` : Nom et prénom
 - `email` : Email unique (utilisé pour la connexion)
-- `password` : Mot de passe hashé automatiquement
+- `password` : Mot de passe hashé automatiquement (optionnel pour OAuth)
 - `avatar` : Photo de profil (relation vers `directus_files`)
 - `status` : active/suspended/deleted
 - `role` : Rôle assigné (admin, public, custom...)
+- `provider` : Méthode de connexion ("default" pour email/mot de passe, "github" pour OAuth GitHub)
+- `external_identifier` : ID externe (GitHub user ID, Google ID, etc.)
 - `date_created` : Date de création du compte
 - `last_access` : Dernière connexion
+
+**🔗 Champs OAuth automatiques (ajoutés par Directus) :**
+- `provider` : "default", "github", "google", "facebook", etc.
+- `external_identifier` : ID unique chez le fournisseur OAuth (ex: GitHub user ID "12345678")
+- `auth_data` : Données supplémentaires du provider (tokens de refresh, etc.)
 
 **Avantages du système intégré :**
 - ✅ **Authentification JWT** automatique
@@ -701,7 +710,349 @@ Directus crée automatiquement les relations inverses :
 
 ---
 
-## 7. Configuration des rôles et permissions
+## 7. Configuration de l'authentification OAuth avec GitHub
+
+### Pourquoi OAuth avec GitHub ?
+
+L'**authentification OAuth** offre une expérience utilisateur moderne et sécurisée pour votre application Meme Manager :
+
+- ✅ **Simplicité utilisateur** : Pas besoin de créer un nouveau compte
+- ✅ **Sécurité renforcée** : GitHub gère l'authentification et les mots de passe
+- ✅ **Données enrichies** : Avatar, nom, email automatiquement récupérés
+- ✅ **Expérience moderne** : Standard des applications web actuelles
+
+**Architecture OAuth GitHub + Directus :**
+```
+1. Frontend → Redirect GitHub OAuth
+2. GitHub → Code d'autorisation → Frontend  
+3. Frontend → Code → Directus
+4. Directus → Token GitHub → Données utilisateur
+5. Directus → JWT Token → Frontend (connecté)
+```
+
+### Étape 1 : Configuration GitHub OAuth App
+
+#### Créer une application OAuth sur GitHub
+
+1. **Se connecter à GitHub** et aller sur https://github.com/settings/developers
+2. **OAuth Apps** → **New OAuth App**
+3. **Remplir les informations** :
+   - **Application name** : "Meme Manager - Development"
+   - **Homepage URL** : `http://localhost:4200`
+   - **Application description** : "Application de gestion de memes pour le cours"
+   - **Authorization callback URL** : `http://localhost:8055/auth/login/github/callback`
+
+4. **Register application**
+5. **Noter les informations importantes** :
+   - **Client ID** : (sera public côté frontend)
+   - **Client Secret** : (garder secret côté backend)
+
+*[Insérer screenshot : Configuration OAuth App GitHub]*
+
+### Étape 2 : Configuration Directus pour GitHub OAuth
+
+#### Variables d'environnement
+
+Ajouter dans votre fichier `.env` de Directus :
+
+```env
+# Configuration OAuth GitHub
+AUTH_PROVIDERS="github"
+
+AUTH_GITHUB_DRIVER="oauth2"
+AUTH_GITHUB_CLIENT_ID="votre_client_id_github"
+AUTH_GITHUB_CLIENT_SECRET="votre_client_secret_github"
+AUTH_GITHUB_SCOPE="read:user user:email"
+
+# URLs de redirection
+AUTH_GITHUB_AUTHORIZE_URL="https://github.com/login/oauth/authorize"
+AUTH_GITHUB_ACCESS_URL="https://github.com/login/oauth/access_token"
+AUTH_GITHUB_PROFILE_URL="https://api.github.com/user"
+
+# Configuration des champs utilisateur
+AUTH_GITHUB_IDENTIFIER_KEY="id"
+AUTH_GITHUB_EMAIL_KEY="email"
+AUTH_GITHUB_FIRST_NAME_KEY="name"
+AUTH_GITHUB_LAST_NAME_KEY=""
+AUTH_GITHUB_AVATAR_KEY="avatar_url"
+
+# Redirection après connexion
+AUTH_GITHUB_REDIRECT_ALLOW_LIST="http://localhost:4200"
+```
+
+*[Insérer screenshot : Configuration .env avec variables OAuth]*
+
+#### Redémarrage de Directus
+
+```bash
+# Arrêter Directus (Ctrl+C)
+# Puis relancer
+npm run directus:dev
+```
+
+### Étape 3 : Configuration des permissions OAuth
+
+#### Rôle par défaut pour les utilisateurs OAuth
+
+1. **Settings** → **Access Control** → **Roles**
+2. **Modifier le rôle "Authenticated User"** ou **créer un rôle "GitHub Users"**
+3. **App Access** : ❌ Désactivé (les utilisateurs GitHub n'accèdent pas à l'admin)
+4. **Admin Access** : ❌ Désactivé
+
+#### Permissions automatiques pour les utilisateurs GitHub
+
+Les utilisateurs qui se connectent via GitHub auront automatiquement :
+- Accès en lecture aux memes et tags
+- Possibilité de créer leurs propres memes
+- Possibilité de liker les memes
+- Accès à leurs notifications
+
+*[Insérer screenshot : Configuration rôle GitHub Users]*
+
+### Étape 4 : Test OAuth avec Insomnia
+
+#### Comprendre le flux OAuth
+
+Le processus OAuth nécessite plusieurs étapes que nous allons simuler :
+
+1. **Redirection vers GitHub** (simulation navigateur)
+2. **Récupération du code d'autorisation** 
+3. **Échange code contre token JWT Directus**
+
+#### Créer le dossier OAuth dans Insomnia
+
+1. **New Folder** : "🔐 OAuth GitHub"
+2. **Ajouter ces requêtes de test**
+
+#### Requête 1 : URL de redirection GitHub
+
+**Purpose** : Générer l'URL de connexion GitHub
+
+```http
+GET {{ _.base_url }}/auth/github
+```
+
+**Réponse attendue** : Redirection vers GitHub OAuth
+
+```json
+{
+  "data": {
+    "public": {
+      "authorize_url": "https://github.com/login/oauth/authorize?client_id=xxx&scope=read:user+user:email&redirect_uri=http://localhost:8055/auth/login/github/callback",
+      "identifier_key": "id"
+    }
+  }
+}
+```
+
+*[Insérer screenshot : Requête OAuth redirect dans Insomnia]*
+
+#### Requête 2 : Simulation du callback GitHub
+
+Pour tester le processus complet, nous devons simuler le callback GitHub :
+
+**Étapes manuelles (simulation navigateur) :**
+
+1. **Copier l'URL `authorize_url`** de la réponse précédente
+2. **Coller dans un navigateur** → Autoriser l'application sur GitHub
+3. **GitHub redirige vers** : `http://localhost:8055/auth/login/github/callback?code=XXXXX`
+4. **Noter le code d'autorisation** dans l'URL
+
+**Ou utiliser directement le endpoint Directus :**
+
+```http
+GET {{ _.base_url }}/auth/login/github/callback?code=CODE_REÇU_DE_GITHUB
+```
+
+#### Requête 3 : Finalisation de la connexion
+
+```http
+POST {{ _.base_url }}/auth/login/github
+Content-Type: application/json
+
+{
+  "code": "code_authorization_github"
+}
+```
+
+**Réponse attendue** :
+```json
+{
+  "data": {
+    "access_token": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...",
+    "expires": 900000,
+    "refresh_token": "def50200..."
+  }
+}
+```
+
+*[Insérer screenshot : Réponse successful OAuth login]*
+
+### Étape 5 : Vérification de l'utilisateur créé automatiquement
+
+#### Vérifier la création automatique
+
+```http
+GET {{ _.base_url }}/users/me
+Authorization: Bearer {{ _.token_github }}
+```
+
+**Réponse attendue** :
+```json
+{
+  "data": {
+    "id": "uuid-utilisateur",
+    "first_name": "John",
+    "last_name": "Doe",
+    "email": "john.doe@example.com",
+    "avatar": "lien-vers-avatar-github",
+    "role": "uuid-role-authenticated-user",
+    "provider": "github",
+    "external_identifier": "12345678"
+  }
+}
+```
+
+Les champs sont automatiquement remplis depuis GitHub :
+- `first_name` : Nom GitHub
+- `email` : Email principal GitHub
+- `avatar` : Avatar GitHub (URL)
+- `provider` : "github" 
+- `external_identifier` : ID GitHub
+
+*[Insérer screenshot : Données utilisateur GitHub dans Directus]*
+
+### Étape 6 : Test des permissions après OAuth
+
+#### Tester la création de meme avec utilisateur GitHub
+
+```http
+POST {{ _.base_url }}/items/memes
+Authorization: Bearer {{ _.token_github }}
+Content-Type: application/json
+
+{
+  "title": "Mon meme via OAuth GitHub",
+  "image": "uuid-du-fichier-uploadé",
+  "text_top": "Quand tu te connectes",
+  "text_bottom": "Avec ton compte GitHub",
+  "tags": [
+    {"tags_id": "uuid-tag-humor"}
+  ]
+}
+```
+
+#### Vérifier les permissions automatiques
+
+L'utilisateur GitHub peut :
+- ✅ **Lire** tous les memes publics
+- ✅ **Créer** ses propres memes  
+- ✅ **Modifier/Supprimer** uniquement ses memes
+- ✅ **Liker** les memes des autres
+- ✅ **Créer** de nouveaux tags
+
+*[Insérer screenshot : Test permissions utilisateur OAuth dans Insomnia]*
+
+### Étape 7 : Gestion des avatars GitHub
+
+#### Avatar automatique depuis GitHub
+
+Directus récupère automatiquement l'avatar GitHub et le stocke comme référence. Pour l'utiliser dans vos templates :
+
+```http
+GET {{ _.base_url }}/users/me?fields=*,avatar.*
+Authorization: Bearer {{ _.token_github }}
+```
+
+**Structure de l'avatar :**
+```json
+{
+  "avatar": {
+    "id": "uuid-fichier-avatar",
+    "filename": "avatar-github.jpg",
+    "title": "Avatar GitHub de John Doe",
+    "type": "image/jpeg"
+  }
+}
+```
+
+#### URL d'accès à l'avatar
+
+```
+http://localhost:8055/assets/uuid-avatar?width=64&height=64&fit=cover
+```
+
+### Workflow OAuth complet dans Insomnia
+
+#### Collection finale OAuth
+
+```
+📁 🔐 OAuth GitHub
+├── Get GitHub Auth URL
+├── Login with GitHub Code  
+├── Get Current User (GitHub)
+├── Test Meme Creation (GitHub User)
+└── Test Permissions (GitHub User)
+```
+
+#### Test du workflow complet
+
+1. **Get GitHub Auth URL** → Copier l'URL d'autorisation
+2. **Navigateur** → Autoriser l'app → Noter le code
+3. **Login with GitHub Code** → Recevoir le JWT token
+4. **Mettre à jour la variable** `token_github` dans l'environnement
+5. **Test Meme Creation** → Vérifier la création réussie
+6. **Vérifier dans l'admin** → L'utilisateur GitHub apparaît automatiquement
+
+*[Insérer screenshot : Collection OAuth complète dans Insomnia]*
+
+### Gestion des erreurs OAuth
+
+#### Erreurs courantes et solutions
+
+**❌ "Invalid client_id" :**
+- Vérifier le `CLIENT_ID` dans le `.env`
+- S'assurer que l'app GitHub est bien configurée
+
+**❌ "Redirect URI mismatch" :**  
+- Vérifier l'URL de callback dans les settings GitHub
+- Doit être exactement : `http://localhost:8055/auth/login/github/callback`
+
+**❌ "User already exists" :**
+- Un utilisateur avec le même email existe déjà
+- Directus gère automatiquement le linking des comptes
+
+#### Debug OAuth avec les logs Directus
+
+```bash
+# Logs détaillés pour debug OAuth
+DEBUG="directus:auth" npm run directus:dev
+```
+
+### Configuration pour la production
+
+#### Variables production
+
+```env
+# Production OAuth settings
+AUTH_GITHUB_CLIENT_ID="client_id_production"
+AUTH_GITHUB_CLIENT_SECRET="client_secret_production"
+AUTH_GITHUB_REDIRECT_ALLOW_LIST="https://votre-domaine.com,https://app.votre-domaine.com"
+
+# URLs de callback production
+# GitHub OAuth App callback: https://api.votre-domaine.com/auth/login/github/callback
+```
+
+#### Sécurité production
+
+- ✅ **HTTPS obligatoire** pour OAuth en production
+- ✅ **Secrets dans variables d'environnement** sécurisées  
+- ✅ **Whitelist des domaines** de redirection
+- ✅ **Scopes minimaux** GitHub (read:user, user:email)
+
+---
+
+## 8. Configuration des rôles et permissions
 
 ### Système de permissions Directus
 
