@@ -52,8 +52,6 @@ Notre application va gérer :
 
 🎭 Memes
 ├── 🖼️ Image de base
-├── 📝 Texte supérieur
-├── 📝 Texte inférieur
 ├── 🏷️ Tags (multiples)
 ├── 👤 Créateur (utilisateur connecté)
 ├── 📊 Statistiques (vues, likes)
@@ -100,12 +98,9 @@ erDiagram
         uuid id PK "🔑 Identifiant unique"
         string title "📝 Titre du meme"
         uuid image FK "🖼️ Image (fichier)"
-        string text_top "📝 Texte supérieur"
-        string text_bottom "📝 Texte inférieur"
         integer views "👁️ Nombre de vues"
         integer likes "❤️ Nombre de likes"
         uuid user_created FK "👤 Créateur"
-        string status "⚡ Statut publication"
         timestamp date_created "📅 Date création"
         timestamp date_updated "📅 Date modification"
     }
@@ -236,8 +231,6 @@ Memes:
   id: UUID (Primary Key, Auto-generated) 
   title: String (Required, max 255 chars)
   image: File (Required, Images only)
-  text_top: String (Optional, max 100 chars)
-  text_bottom: String (Optional, max 100 chars)
   views: Integer (Default 0, Read-only)
   likes: Integer (Default 0)
   user_created: M2O Relation → directus_users (Automatique)
@@ -284,11 +277,14 @@ Notifications:
 **La méthode moderne et simple :**
 
 ```bash
-# Créer un nouveau projet Directus avec le template CLI
-npx directus-template-cli@latest init mon-projet-meme-manager
+# Créer un nouveau dossier qui contiendras votre projet
+mkdir mon-projet-meme-manager
 
 # Naviguer dans le dossier créé
 cd mon-projet-meme-manager
+
+# Initialiser un projet Directus
+npm init directus-projet@latest .
 ```
 
 Cette commande va automatiquement :
@@ -297,85 +293,50 @@ Cette commande va automatiquement :
 - ✅ Configurer le fichier `.env` avec des valeurs par défaut
 - ✅ Préparer les scripts npm
 
-*[Insérer screenshot : Terminal avec la commande npx en cours d'exécution]*
+Lors de son execution, le CLI vous posera quelques questions pour personnaliser votre projet.
+```bash
+  - Database client : SQLite
+  - Database file path : ./data/database.db
+  - Admin email : ton-email@example.com
+  - Admin password : ton-mot-de-passe
+```
+l'email et le mot de passe demandé vous servirons à vous connecter à l'interface d'administration.
 
-**Options de configuration proposées :**
-- **Project Name** : `mon-projet-meme-manager`
-- **Database Type** : SQLite (recommandé pour le développement)
-- **Admin Email** : Votre email
-- **Admin Password** : Mot de passe sécurisé
+*[Insérer screenshot directus1.png : Terminal avec la commande npx en cours d'exécution]*
 
-*[Insérer screenshot : Interface interactive du CLI avec les questions]*
+Maintenant, initialisons un repo Git pour versionner notre projet :
+
+commencez par créer un fichier `.gitignore` pour exclure les fichiers inutiles :
+
+```plaintext
+node_modules/
+.env
+data.db
+uploads/
+
+.vscode/
+.DS_Store
+.idea/
+```
+ensuite, initialisez le dépôt Git :
+```bash
+git init
+git add .
+git commit -m "Initial commit - Setup Directus project"
+```
 
 ### Étape 2 : Premier démarrage
 
 ```bash
 # Démarrer Directus en mode développement
-npm run dev
+npx directus start
 ```
-
-Le CLI a automatiquement configuré tous les scripts nécessaires :
-- `npm run dev` - Développement avec auto-reload
-- `npm run start` - Production
-- `npm run build` - Build du projet
-
-*[Insérer screenshot : Console de démarrage Directus avec les logs]*
 
 ### Étape 3 : Première connexion
 
 1. **Ouvrir le navigateur** sur http://localhost:8055
 2. **Se connecter** avec les identifiants admin créés
 3. **Explorer l'interface** d'administration
-
-*[Insérer screenshot : Page de connexion Directus]*
-*[Insérer screenshot : Dashboard admin après connexion]*
-
-### Configuration spécifique au projet du cours
-
-Pour notre projet de cours existant, les étapes sont simplifiées :
-
-```bash
-# 1. Installation des dépendances du monorepo
-npm run install:all
-
-# 2. Initialisation de Directus (déjà configuré)
-npm run directus:init
-
-# 3. Démarrage en mode développement
-npm run directus:dev
-```
-
-### Structure des fichiers Directus
-
-```
-poc/directus-backend/
-├── extensions/          # Extensions personnalisées
-│   ├── hooks/          # Hooks personnalisés
-│   ├── endpoints/      # Endpoints API custom
-│   └── interfaces/     # Interfaces UI custom
-├── uploads/            # Fichiers uploadés
-├── data.db            # Base de données SQLite
-├── .env               # Configuration environnement
-├── package.json       # Dépendances Node.js
-└── snapshot.yaml      # Schéma de base exporté (optionnel)
-```
-
-### Avantages du CLI Template
-
-**Pourquoi utiliser `directus-template-cli` ?**
-
-- 🚀 **Setup en une commande** - Fini les configurations manuelles !
-- 🔧 **Configuration optimale** - Bonnes pratiques pré-configurées
-- 📦 **Dépendances à jour** - Toujours la dernière version stable
-- 🛡️ **Sécurité** - Clés et secrets générés automatiquement
-- 📚 **Templates** - Différents templates selon le projet
-
-**Comparaison avec l'installation manuelle :**
-
-| Méthode | Temps | Complexité | Erreurs possibles |
-|---------|--------|------------|-------------------|
-| Manuel | ~10 min | 🔴 Élevée | Nombreuses |
-| CLI Template | ~2 min | 🟢 Faible | Quasi-nulles |
 
 ### Vérification de l'installation
 
@@ -391,23 +352,16 @@ poc/directus-backend/
 
 ```
 mon-projet-meme-manager/
-├── extensions/          # Extensions personnalisées
-├── uploads/            # Fichiers uploadés
-├── .env               # Configuration auto-générée
+├── data.db            # Base de données SQLite
+├── extensions/        # Extensions personnalisées
+├── node_modules/      # Dépendances Node.js
+├── uploads/           # Fichiers uploadés
 ├── package.json       # Scripts et dépendances
-├── .gitignore         # Fichiers à ignorer
-└── README.md          # Documentation du projet
+├── package-lock.json  # Version exacte des dépendances
+├── README.md          # Documentation du projet
+├── .env               # Configuration auto-générée
+└── .gitignore         # Fichiers à ignorer
 ```
-
-**En cas de problème (rare avec le CLI) :**
-
-```bash
-# Supprimer et recréer le projet
-rm -rf mon-projet-meme-manager
-npx directus-template-cli@latest init mon-projet-meme-manager
-```
-
-*[Insérer screenshot : Interface d'administration vide prête à être configurée]*
 
 ---
 
@@ -424,37 +378,33 @@ Chaque collection contient des **champs** (colonnes) avec des **types** spécifi
    - Dans le menu principal → **Settings** → **Data Model**
    - Cliquer sur **"Create Collection"**
 
-*[Insérer screenshot : Menu Data Model]*
-
 2. **Configuration de base**
    - **Collection Name** : `tags`
-   - **Collection Key** : `tags` (auto-généré)
-   - **Archive** : Désactivé
-   - **Accountability** : Activé
-   - Cliquer sur **"Save"**
+   - **primary key** : `id` (UUID, auto-généré)
+   - **flèche suivant ->**
+   - **cocher** : Created On, Updated On (timestamps automatiques)
+   - Cliquer sur **"Finish Setup"**
 
-*[Insérer screenshot : Formulaire création collection]*
+*[Insérer screenshot directus2.png : Formulaire création collection]*
 
 3. **Ajout des champs**
 
    **Champ "name" (Nom du tag) :**
    - Type : **String**
    - Key : `name`
-   - Display Name : "Nom"
    - Required : ✅ Oui
    - Unique : ✅ Oui
-   - Max Length : 50
 
-*[Insérer screenshot : Configuration des champs de Tags]*
+*[Insérer screenshot directus3.png : Configuration des champs de Tags]*
 
 ### 🎭 Étape 2 : Créer la collection "Memes"
 
-> **💡 Note importante** : Les champs `user_created`, `date_created` et `date_updated` sont automatiquement ajoutés par Directus quand vous activez "Accountability" lors de la création de la collection.
-
 1. **Créer la collection**
    - Collection Name : `memes`
-   - Archive : Activé (pour permettre de "supprimer" sans perdre les données)
-   - Accountability : Activé
+   - **primary key** : `id` (UUID, auto-généré)
+   - **flèche suivant ->**
+   - **cocher** : Created On, Updated On et Created By
+   - Cliquer sur **"Finish Setup"**
 
 2. **Ajout des champs essentiels**
 
@@ -465,21 +415,10 @@ Chaque collection contient des **champs** (colonnes) avec des **types** spécifi
    - Interface : **Input**
 
    **Champ "image" (Image de base) :**
-   - Type : **File**
+   - Type : **Image**
    - Key : `image`
    - Required : ✅ Oui
-   - Interface : **File Image**
-   - Allowed file types : `image/jpeg,image/png,image/gif,image/webp`
-
-   **Champ "text_top" (Texte du haut) :**
-   - Type : **String**
-   - Key : `text_top`
-   - Interface : **Input**
-
-   **Champ "text_bottom" (Texte du bas) :**
-   - Type : **String**
-   - Key : `text_bottom`
-   - Interface : **Input**
+   - Crop to fit : Non
 
    **Champ "views" (Nombre de vues) :**
    - Type : **Integer**
@@ -493,117 +432,237 @@ Chaque collection contient des **champs** (colonnes) avec des **types** spécifi
    - Default Value : `0`
    - Interface : **Input**
 
-*[Insérer screenshot : Configuration des champs de Memes]*
+Faites de même pour les Data Model "Memes_Likes" et "Notifications".
 
-### 🎭 Étape 3 : Créer la collection "Memes_Likes" (Système de likes)
+[//]: # (### 🎭 Étape 3 : Créer la collection "Memes_Likes" &#40;Système de likes&#41;)
 
-1. **Créer la collection**
-   - Collection Name : `memes_likes`
-   - Archive : Désactivé
-   - Accountability : Activé
+[//]: # ()
+[//]: # (1. **Créer la collection**)
 
-2. **Ajout des champs de relation**
+[//]: # (   - Collection Name : `memes_likes`)
 
-   **Champ "meme_id" (Meme liké) :**
-   - Type : **Many to One**
-   - Key : `meme_id`
-   - Display Name : "Meme"
-   - Related Collection : **memes**
-   - On Delete : **CASCADE**
+[//]: # (   - Archive : Désactivé)
 
-   **Champ "user_id" (Utilisateur qui like) :**
-   - Type : **Many to One** 
-   - Key : `user_id`
-   - Display Name : "Utilisateur"
-   - Related Collection : **directus_users**
-   - On Delete : **CASCADE**
+[//]: # (   - Accountability : Activé)
 
-*[Insérer screenshot : Configuration collection Memes_Likes]*
+[//]: # ()
+[//]: # (2. **Ajout des champs de relation**)
 
-### 🔔 Étape 4 : Créer la collection "Notifications" (Temps réel)
+[//]: # ()
+[//]: # (   **Champ "meme_id" &#40;Meme liké&#41; :**)
 
-1. **Créer la collection**
-   - Collection Name : `notifications`
-   - Archive : Désactivé
-   - Accountability : Activé
+[//]: # (   - Type : **Many to One**)
 
-2. **Ajout des champs**
+[//]: # (   - Key : `meme_id`)
 
-   **Champ "user_id" (Destinataire) :**
-   - Type : **Many to One**
-   - Key : `user_id`
-   - Display Name : "Destinataire"
-   - Related Collection : **directus_users**
-   - Required : ✅ Oui
+[//]: # (   - Display Name : "Meme")
 
-   **Champ "message" (Contenu de la notification) :**
-   - Type : **String**
-   - Key : `message`
-   - Display Name : "Message"
-   - Required : ✅ Oui
+[//]: # (   - Related Collection : **memes**)
 
-   **Champ "meme_id" (Meme associé) :**
-   - Type : **Many to One**
-   - Key : `meme_id`
-   - Display Name : "Meme associé"
-   - Related Collection : **memes**
-   - Required : ❌ Non (optionnel)
+[//]: # (   - On Delete : **CASCADE**)
 
-   **Champ "event_type" (Type d'événement) :**
-   - Type : **String**
-   - Key : `event_type`
-   - Display Name : "Type d'événement"
-   - Interface : **Select Dropdown**
-   - Choices : `nouveau_meme`, `nouveau_like`, `nouveau_tag`
-   - Default : `nouveau_meme`
+[//]: # ()
+[//]: # (   **Champ "user_id" &#40;Utilisateur qui like&#41; :**)
 
-   **Champ "is_read" (Statut de lecture) :**
-   - Type : **Boolean**
-   - Key : `is_read`
-   - Display Name : "Lu"
-   - Default : `false`
+[//]: # (   - Type : **Many to One** )
 
-*[Insérer screenshot : Configuration collection Notifications]*
+[//]: # (   - Key : `user_id`)
 
-### 🧪 Test des notifications avec Insomnia
+[//]: # (   - Display Name : "Utilisateur")
 
-**Maintenant que les notifications sont créées, ajoutons-les à notre collection Insomnia !**
+[//]: # (   - Related Collection : **directus_users**)
 
-#### Ajouter le dossier Notifications
+[//]: # (   - On Delete : **CASCADE**)
 
-1. **New Folder** dans Insomnia : "🔔 Notifications"
-2. Créer ces requêtes :
+[//]: # ()
+[//]: # (*[Insérer screenshot : Configuration collection Memes_Likes]*)
 
-**Get My Notifications :**
-```http
-GET {{ _.base_url }}/items/notifications?filter[user_id][_eq]=$CURRENT_USER&fields=*,meme_id.title&sort=-date_created
-Authorization: Bearer {{ _.token }}
-```
+[//]: # ()
+[//]: # (### 🔔 Étape 4 : Créer la collection "Notifications" &#40;Temps réel&#41;)
 
-**Mark Notification as Read :**
-```http
-PATCH {{ _.base_url }}/items/notifications/[NOTIFICATION-UUID]
-Authorization: Bearer {{ _.token }}
-Content-Type: application/json
+[//]: # ()
+[//]: # (1. **Créer la collection**)
 
-{
-  "is_read": true
-}
-```
+[//]: # (   - Collection Name : `notifications`)
 
-#### Test du workflow complet
+[//]: # (   - Archive : Désactivé)
 
-1. **Créer un meme** avec un utilisateur A
-2. **Liker ce meme** avec un utilisateur B  
-3. **Hook automatique** crée une notification pour l'utilisateur A
-4. **Récupérer les notifications** de l'utilisateur A
-5. **Marquer comme lu**
+[//]: # (   - Accountability : Activé)
 
-*[Insérer screenshot : Dossier notifications dans Insomnia]*
+[//]: # ()
+[//]: # (2. **Ajout des champs**)
+
+[//]: # ()
+[//]: # (   **Champ "user_id" &#40;Destinataire&#41; :**)
+
+[//]: # (   - Type : **Many to One**)
+
+[//]: # (   - Key : `user_id`)
+
+[//]: # (   - Display Name : "Destinataire")
+
+[//]: # (   - Related Collection : **directus_users**)
+
+[//]: # (   - Required : ✅ Oui)
+
+[//]: # ()
+[//]: # (   **Champ "message" &#40;Contenu de la notification&#41; :**)
+
+[//]: # (   - Type : **String**)
+
+[//]: # (   - Key : `message`)
+
+[//]: # (   - Display Name : "Message")
+
+[//]: # (   - Required : ✅ Oui)
+
+[//]: # ()
+[//]: # (   **Champ "meme_id" &#40;Meme associé&#41; :**)
+
+[//]: # (   - Type : **Many to One**)
+
+[//]: # (   - Key : `meme_id`)
+
+[//]: # (   - Display Name : "Meme associé")
+
+[//]: # (   - Related Collection : **memes**)
+
+[//]: # (   - Required : ❌ Non &#40;optionnel&#41;)
+
+[//]: # ()
+[//]: # (   **Champ "event_type" &#40;Type d'événement&#41; :**)
+
+[//]: # (   - Type : **String**)
+
+[//]: # (   - Key : `event_type`)
+
+[//]: # (   - Display Name : "Type d'événement")
+
+[//]: # (   - Interface : **Select Dropdown**)
+
+[//]: # (   - Choices : `nouveau_meme`, `nouveau_like`, `nouveau_tag`)
+
+[//]: # (   - Default : `nouveau_meme`)
+
+[//]: # ()
+[//]: # (   **Champ "is_read" &#40;Statut de lecture&#41; :**)
+
+[//]: # (   - Type : **Boolean**)
+
+[//]: # (   - Key : `is_read`)
+
+[//]: # (   - Display Name : "Lu")
+
+[//]: # (   - Default : `false`)
+
+[//]: # ()
+[//]: # (*[Insérer screenshot : Configuration collection Notifications]*)
+
+[//]: # ()
+[//]: # (### 🧪 Test des notifications avec Insomnia)
+
+[//]: # ()
+[//]: # (**Maintenant que les notifications sont créées, ajoutons-les à notre collection Insomnia !**)
+
+[//]: # ()
+[//]: # (#### Ajouter le dossier Notifications)
+
+[//]: # ()
+[//]: # (1. **New Folder** dans Insomnia : "🔔 Notifications")
+
+[//]: # (2. Créer ces requêtes :)
+
+[//]: # ()
+[//]: # (**Get My Notifications :**)
+
+[//]: # (```http)
+
+[//]: # (GET {{ _.base_url }}/items/notifications?filter[user_id][_eq]=$CURRENT_USER&fields=*,meme_id.title&sort=-date_created)
+
+[//]: # (Authorization: Bearer {{ _.token }})
+
+[//]: # (```)
+
+[//]: # ()
+[//]: # (**Mark Notification as Read :**)
+
+[//]: # (```http)
+
+[//]: # (PATCH {{ _.base_url }}/items/notifications/[NOTIFICATION-UUID])
+
+[//]: # (Authorization: Bearer {{ _.token }})
+
+[//]: # (Content-Type: application/json)
+
+[//]: # ()
+[//]: # ({)
+
+[//]: # (  "is_read": true)
+
+[//]: # (})
+
+[//]: # (```)
 
 ---
 
-## 5. Gestion des médias
+## 5. Relations entre collections
+
+### Comprendre les relations Directus
+
+Les relations permettent de lier les collections entre elles :
+
+- **Many-to-One (M2O)** : plusieurs éléments d'une collection pointent vers un seul élément d'une autre collection
+- **One-to-Many (O2M)** : un élément d'une collection est lié à plusieurs éléments d'une autre collection (inverse de M2O)
+- **Many-to-Many (M2M)** : plusieurs éléments d'une collection sont liés à plusieurs éléments d'une autre collection via une table de liaison
+
+### 🔗 Étape 1 : Comprendre les relations avec directus_users
+
+**Relations automatiques déjà créées :**
+- `user_created` : Directus ajoute automatiquement ce champ à toute collection avec "Accountability" activé
+- `date_created` / `date_updated` : Timestamps automatiques
+- Ces champs se remplissent automatiquement selon l'utilisateur connecté
+
+**Relations personnalisées à créer :**
+- Système de likes : relation many-to-many via table de liaison
+Même si memes_likes est une table de liaison, nous avons créé une collection dédiée pour gérer les likes avec des métadonnées (date_created). Il faut donc créer les relations Many to One dans cette collection.
+
+### 🔗 Étape 2 : Relation Memes → Tags (M2M)
+
+1. **Aller dans la collection Memes**
+   - Data Model → `memes`
+   - Cliquer sur **"Create Field"**
+
+2. **Configurer le champ de relation**
+   - Type : **Many to Many**
+   - Key : `tags`
+   - Display Name : "Tags"
+   - Related Collection : **tags**
+   - Junction Collection : **memes_tags** (sera créée automatiquement)
+
+*[Insérer screenshot directus4.png : Configuration relation M2O]*
+
+
+
+### 🔗 Étape 3 : Relation Memes_Likes → Users & Memes (M2O)
+
+faire deux relations Many to One dans la collection `memes_likes` :
+
+**Vérification des relations créées :**
+1. Dans `memes_likes` → champ `user_id` vers `directus_users`
+2. Dans `memes_likes` → champ `meme_id` vers `memes`
+
+### 🔗 Étape 4 : Relations inverses automatiques
+
+Directus crée automatiquement les relations inverses :
+- Dans `tags` : champ virtuel `memes` (Many to Many)
+- Dans `memes` : champ `tags` permettant la sélection multiple
+- Dans `directus_users` : champ virtuel `memes` (ses memes créés)
+- Dans `directus_users` : champ virtuel `memes_likes` (ses likes)
+- Dans `memes` : champ virtuel `memes_likes` (qui a liké ce meme)
+
+---
+
+## 6. Gestion des médias
 
 ### Configuration du stockage de fichiers
 
@@ -612,12 +671,16 @@ Directus gère automatiquement l'upload et la transformation des médias. Voici 
 ### Transformations automatiques d'images
 
 1. **Accéder aux réglages de fichiers**
-   - Settings → **Files & Thumbnails**
+   - Settings → Settings → **Files & Storage**
 
 2. **Configuration des transformations**
    - **Thumbnail Generation** : ✅ Activé
-   - **Quality** : 85 (bon compromis qualité/taille)
-   - **Format** : WebP (pour l'optimisation)
+   - Transformation Presets
+      - **Fit** : contain (pour éviter les découpages)
+      - **Height** : 1000 (px)
+      - **Width** : 1000 (px)
+      - **Quality** : 80 (bon compromis qualité/taille)
+      - **Format** : WebP (pour l'optimisation)
 
 *[Insérer screenshot : Configuration des transformations]*
 
@@ -638,75 +701,6 @@ GET /assets/[file-id]?format=webp&quality=80
 # Transformations combinées
 GET /assets/[file-id]?width=800&height=600&fit=cover&quality=85&format=webp
 ```
-
-### Types de fichiers autorisés
-
-Pour sécuriser les uploads, configurons les types acceptés :
-
-1. **Settings** → **Files & Thumbnails** → **File Type Allow List**
-2. Ajouter : `image/jpeg`, `image/png`, `image/gif`, `image/webp`
-
-*[Insérer screenshot : Configuration des types de fichiers]*
-
----
-
-## 6. Relations entre collections
-
-### Comprendre les relations Directus
-
-Les relations permettent de lier les collections entre elles :
-
-- **Many-to-One (M2O)** : Un meme appartient à une catégorie
-- **One-to-Many (O2M)** : Une catégorie contient plusieurs memes
-- **Many-to-Many (M2M)** : Les utilisateurs peuvent liker plusieurs memes
-
-### 🔗 Étape 1 : Comprendre les relations avec directus_users
-
-**Relations automatiques déjà créées :**
-- `user_created` : Directus ajoute automatiquement ce champ à toute collection avec "Accountability" activé
-- `date_created` / `date_updated` : Timestamps automatiques
-- Ces champs se remplissent automatiquement selon l'utilisateur connecté
-
-**Relations personnalisées à créer :**
-- Système de likes : relation many-to-many via table de liaison
-- Tags : relation many-to-many pour organiser les memes
-
-### 🔗 Étape 2 : Relation Memes → Tags (M2M)
-
-1. **Aller dans la collection Memes**
-   - Data Model → `memes`
-   - Cliquer sur **"Create Field"**
-
-2. **Configurer le champ de relation**
-   - Type : **Many to Many**
-   - Key : `tags`
-   - Display Name : "Tags"
-   - Related Collection : **tags**
-   - Junction Collection : **memes_tags** (sera créée automatiquement)
-   - Sort Field : Optionnel
-
-*[Insérer screenshot : Configuration relation M2O]*
-
-
-
-### 🔗 Étape 3 : Relation Memes_Likes → Users & Memes (M2O)
-
-Ces relations ont déjà été créées lors de la création de la collection `memes_likes` à l'étape précédente.
-
-**Vérification des relations créées :**
-1. Dans `memes_likes` → champ `user_id` vers `directus_users`
-2. Dans `memes_likes` → champ `meme_id` vers `memes`
-
-### 🔗 Étape 4 : Relations inverses automatiques
-
-Directus crée automatiquement les relations inverses :
-- Dans `tags` : champ virtuel `memes` (Many to Many)
-- Dans `memes` : champ `tags` permettant la sélection multiple
-- Dans `directus_users` : champ virtuel `memes` (ses memes créés)
-- Dans `directus_users` : champ virtuel `memes_likes` (ses likes)
-- Dans `memes` : champ virtuel `memes_likes` (qui a liké ce meme)
-
-*[Insérer screenshot : Visualisation des relations dans l'interface]*
 
 ---
 
