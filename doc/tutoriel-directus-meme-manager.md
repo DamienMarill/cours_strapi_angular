@@ -660,6 +660,130 @@ Directus crée automatiquement les relations inverses :
 - Dans `directus_users` : champ virtuel `memes_likes` (ses likes)
 - Dans `memes` : champ virtuel `memes_likes` (qui a liké ce meme)
 
+### 🔄 Étape 5 : Créer une migration du schéma
+
+#### Pourquoi créer des migrations ?
+
+Les **migrations** dans Directus permettent de :
+- ✅ **Versioner votre schéma de base de données** comme du code
+- ✅ **Synchroniser** les modifications entre développement/production
+- ✅ **Collaborer en équipe** sans conflits de structure
+- ✅ **Rollback** en cas de problème
+- ✅ **Documenter** l'évolution de votre modèle de données
+
+**Concept clé :** Une migration = un snapshot de votre structure de données à un moment donné
+
+#### Créer votre première migration
+
+1. **Via la CLI Directus**
+```bash
+# Depuis votre dossier projet
+npx directus schema snapshot schema-snapshot.json
+```
+
+**Résultat :** Fichier JSON contenant toute votre structure (collections, champs, relations)
+
+*[Insérer screenshot directus5: Commande de migration]*
+
+#### Structure de la migration générée
+
+```json
+{
+  "version": 1,
+  "directus": "11.10.2",
+  "collections": [
+    {
+      "collection": "memes",
+      "meta": {
+        "accountability": "all",
+        "collection": "memes",
+        "group": null,
+        "hidden": false,
+        "icon": "image",
+        "item_duplication_fields": null,
+        "note": null,
+        "singleton": false,
+        "sort": 1,
+        "sort_field": null,
+        "translations": null,
+        "unarchive_value": null,
+        "versioning": false
+      },
+      "schema": {
+        "name": "memes"
+      }
+    }
+    // ... autres collections et champs
+  ],
+  "fields": [...],
+  "relations": [...]
+}
+```
+
+#### Appliquer une migration
+
+**En développement :**
+```bash
+# Appliquer le snapshot
+npx directus schema apply schema-snapshot.json
+```
+
+**En production :**
+```bash
+# Appliquer les migrations en mode sécurisé
+npx directus schema apply schema-snapshot.json --yes
+```
+
+#### Workflow recommandé
+
+```bash
+# 1. Développement : créer votre modèle via l'interface
+# 2. Créer une migration
+npx directus schema snapshot migrations/001_initial_schema.json
+
+# 3. Versionner avec Git
+git add migrations/001_initial_schema.json
+git commit -m "feat: migration initiale du schéma meme manager"
+
+# 4. En production : appliquer la migration  
+npx directus schema apply migrations/001_initial_schema.json
+```
+
+#### Migrations incrémentales
+
+**À chaque modification de structure dans ce tutoriel :**
+
+> 🔄 **Point de migration** : Si vous ajoutez/modifiez une collection ou un champ, créez une nouvelle migration :
+> ```bash
+> npx directus schema snapshot migrations/002_add_oauth_fields.json
+> ```
+
+**Exemples de moments clés pour créer des migrations :**
+- Après l'ajout des champs OAuth (section 10)
+- Après l'ajout des extensions Meilisearch (section 11)  
+- Avant chaque déploiement en production
+- Avant des modifications importantes du schéma
+
+#### Avantages pour le projet d'école
+
+1. **📚 Pédagogique** : Comprendre la gestion de schéma en production
+2. **👥 Collaboration** : Partager facilement la structure entre étudiants
+3. **🔧 Réparation** : Reconstruire rapidement un environnement cassé
+4. **🚀 Déploiement** : Passage dev → prod sans erreur de structure
+
+#### Structure recommandée pour les migrations
+
+```
+mon-projet-meme-manager/
+├── data.db
+├── migrations/
+│   ├── 001_initial_schema.json
+│   ├── 002_add_oauth_support.json
+│   └── 003_add_meilisearch_fields.json
+├── package.json
+└── .env
+```
+
 ---
 
 ## 6. Gestion des médias
@@ -704,349 +828,7 @@ GET /assets/[file-id]?width=800&height=600&fit=cover&quality=85&format=webp
 
 ---
 
-## 7. Configuration de l'authentification OAuth avec GitHub
-
-### Pourquoi OAuth avec GitHub ?
-
-L'**authentification OAuth** offre une expérience utilisateur moderne et sécurisée pour votre application Meme Manager :
-
-- ✅ **Simplicité utilisateur** : Pas besoin de créer un nouveau compte
-- ✅ **Sécurité renforcée** : GitHub gère l'authentification et les mots de passe
-- ✅ **Données enrichies** : Avatar, nom, email automatiquement récupérés
-- ✅ **Expérience moderne** : Standard des applications web actuelles
-
-**Architecture OAuth GitHub + Directus :**
-```
-1. Frontend → Redirect GitHub OAuth
-2. GitHub → Code d'autorisation → Frontend  
-3. Frontend → Code → Directus
-4. Directus → Token GitHub → Données utilisateur
-5. Directus → JWT Token → Frontend (connecté)
-```
-
-### Étape 1 : Configuration GitHub OAuth App
-
-#### Créer une application OAuth sur GitHub
-
-1. **Se connecter à GitHub** et aller sur https://github.com/settings/developers
-2. **OAuth Apps** → **New OAuth App**
-3. **Remplir les informations** :
-   - **Application name** : "Meme Manager - Development"
-   - **Homepage URL** : `http://localhost:4200`
-   - **Application description** : "Application de gestion de memes pour le cours"
-   - **Authorization callback URL** : `http://localhost:8055/auth/login/github/callback`
-
-4. **Register application**
-5. **Noter les informations importantes** :
-   - **Client ID** : (sera public côté frontend)
-   - **Client Secret** : (garder secret côté backend)
-
-*[Insérer screenshot : Configuration OAuth App GitHub]*
-
-### Étape 2 : Configuration Directus pour GitHub OAuth
-
-#### Variables d'environnement
-
-Ajouter dans votre fichier `.env` de Directus :
-
-```env
-# Configuration OAuth GitHub
-AUTH_PROVIDERS="github"
-
-AUTH_GITHUB_DRIVER="oauth2"
-AUTH_GITHUB_CLIENT_ID="votre_client_id_github"
-AUTH_GITHUB_CLIENT_SECRET="votre_client_secret_github"
-AUTH_GITHUB_SCOPE="read:user user:email"
-
-# URLs de redirection
-AUTH_GITHUB_AUTHORIZE_URL="https://github.com/login/oauth/authorize"
-AUTH_GITHUB_ACCESS_URL="https://github.com/login/oauth/access_token"
-AUTH_GITHUB_PROFILE_URL="https://api.github.com/user"
-
-# Configuration des champs utilisateur
-AUTH_GITHUB_IDENTIFIER_KEY="id"
-AUTH_GITHUB_EMAIL_KEY="email"
-AUTH_GITHUB_FIRST_NAME_KEY="name"
-AUTH_GITHUB_LAST_NAME_KEY=""
-AUTH_GITHUB_AVATAR_KEY="avatar_url"
-
-# Redirection après connexion
-AUTH_GITHUB_REDIRECT_ALLOW_LIST="http://localhost:4200"
-```
-
-*[Insérer screenshot : Configuration .env avec variables OAuth]*
-
-#### Redémarrage de Directus
-
-```bash
-# Arrêter Directus (Ctrl+C)
-# Puis relancer
-npm run directus:dev
-```
-
-### Étape 3 : Configuration des permissions OAuth
-
-#### Rôle par défaut pour les utilisateurs OAuth
-
-1. **Settings** → **Access Control** → **Roles**
-2. **Modifier le rôle "Authenticated User"** ou **créer un rôle "GitHub Users"**
-3. **App Access** : ❌ Désactivé (les utilisateurs GitHub n'accèdent pas à l'admin)
-4. **Admin Access** : ❌ Désactivé
-
-#### Permissions automatiques pour les utilisateurs GitHub
-
-Les utilisateurs qui se connectent via GitHub auront automatiquement :
-- Accès en lecture aux memes et tags
-- Possibilité de créer leurs propres memes
-- Possibilité de liker les memes
-- Accès à leurs notifications
-
-*[Insérer screenshot : Configuration rôle GitHub Users]*
-
-### Étape 4 : Test OAuth avec Insomnia
-
-#### Comprendre le flux OAuth
-
-Le processus OAuth nécessite plusieurs étapes que nous allons simuler :
-
-1. **Redirection vers GitHub** (simulation navigateur)
-2. **Récupération du code d'autorisation** 
-3. **Échange code contre token JWT Directus**
-
-#### Créer le dossier OAuth dans Insomnia
-
-1. **New Folder** : "🔐 OAuth GitHub"
-2. **Ajouter ces requêtes de test**
-
-#### Requête 1 : URL de redirection GitHub
-
-**Purpose** : Générer l'URL de connexion GitHub
-
-```http
-GET {{ _.base_url }}/auth/github
-```
-
-**Réponse attendue** : Redirection vers GitHub OAuth
-
-```json
-{
-  "data": {
-    "public": {
-      "authorize_url": "https://github.com/login/oauth/authorize?client_id=xxx&scope=read:user+user:email&redirect_uri=http://localhost:8055/auth/login/github/callback",
-      "identifier_key": "id"
-    }
-  }
-}
-```
-
-*[Insérer screenshot : Requête OAuth redirect dans Insomnia]*
-
-#### Requête 2 : Simulation du callback GitHub
-
-Pour tester le processus complet, nous devons simuler le callback GitHub :
-
-**Étapes manuelles (simulation navigateur) :**
-
-1. **Copier l'URL `authorize_url`** de la réponse précédente
-2. **Coller dans un navigateur** → Autoriser l'application sur GitHub
-3. **GitHub redirige vers** : `http://localhost:8055/auth/login/github/callback?code=XXXXX`
-4. **Noter le code d'autorisation** dans l'URL
-
-**Ou utiliser directement le endpoint Directus :**
-
-```http
-GET {{ _.base_url }}/auth/login/github/callback?code=CODE_REÇU_DE_GITHUB
-```
-
-#### Requête 3 : Finalisation de la connexion
-
-```http
-POST {{ _.base_url }}/auth/login/github
-Content-Type: application/json
-
-{
-  "code": "code_authorization_github"
-}
-```
-
-**Réponse attendue** :
-```json
-{
-  "data": {
-    "access_token": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...",
-    "expires": 900000,
-    "refresh_token": "def50200..."
-  }
-}
-```
-
-*[Insérer screenshot : Réponse successful OAuth login]*
-
-### Étape 5 : Vérification de l'utilisateur créé automatiquement
-
-#### Vérifier la création automatique
-
-```http
-GET {{ _.base_url }}/users/me
-Authorization: Bearer {{ _.token_github }}
-```
-
-**Réponse attendue** :
-```json
-{
-  "data": {
-    "id": "uuid-utilisateur",
-    "first_name": "John",
-    "last_name": "Doe",
-    "email": "john.doe@example.com",
-    "avatar": "lien-vers-avatar-github",
-    "role": "uuid-role-authenticated-user",
-    "provider": "github",
-    "external_identifier": "12345678"
-  }
-}
-```
-
-Les champs sont automatiquement remplis depuis GitHub :
-- `first_name` : Nom GitHub
-- `email` : Email principal GitHub
-- `avatar` : Avatar GitHub (URL)
-- `provider` : "github" 
-- `external_identifier` : ID GitHub
-
-*[Insérer screenshot : Données utilisateur GitHub dans Directus]*
-
-### Étape 6 : Test des permissions après OAuth
-
-#### Tester la création de meme avec utilisateur GitHub
-
-```http
-POST {{ _.base_url }}/items/memes
-Authorization: Bearer {{ _.token_github }}
-Content-Type: application/json
-
-{
-  "title": "Mon meme via OAuth GitHub",
-  "image": "uuid-du-fichier-uploadé",
-  "text_top": "Quand tu te connectes",
-  "text_bottom": "Avec ton compte GitHub",
-  "tags": [
-    {"tags_id": "uuid-tag-humor"}
-  ]
-}
-```
-
-#### Vérifier les permissions automatiques
-
-L'utilisateur GitHub peut :
-- ✅ **Lire** tous les memes publics
-- ✅ **Créer** ses propres memes  
-- ✅ **Modifier/Supprimer** uniquement ses memes
-- ✅ **Liker** les memes des autres
-- ✅ **Créer** de nouveaux tags
-
-*[Insérer screenshot : Test permissions utilisateur OAuth dans Insomnia]*
-
-### Étape 7 : Gestion des avatars GitHub
-
-#### Avatar automatique depuis GitHub
-
-Directus récupère automatiquement l'avatar GitHub et le stocke comme référence. Pour l'utiliser dans vos templates :
-
-```http
-GET {{ _.base_url }}/users/me?fields=*,avatar.*
-Authorization: Bearer {{ _.token_github }}
-```
-
-**Structure de l'avatar :**
-```json
-{
-  "avatar": {
-    "id": "uuid-fichier-avatar",
-    "filename": "avatar-github.jpg",
-    "title": "Avatar GitHub de John Doe",
-    "type": "image/jpeg"
-  }
-}
-```
-
-#### URL d'accès à l'avatar
-
-```
-http://localhost:8055/assets/uuid-avatar?width=64&height=64&fit=cover
-```
-
-### Workflow OAuth complet dans Insomnia
-
-#### Collection finale OAuth
-
-```
-📁 🔐 OAuth GitHub
-├── Get GitHub Auth URL
-├── Login with GitHub Code  
-├── Get Current User (GitHub)
-├── Test Meme Creation (GitHub User)
-└── Test Permissions (GitHub User)
-```
-
-#### Test du workflow complet
-
-1. **Get GitHub Auth URL** → Copier l'URL d'autorisation
-2. **Navigateur** → Autoriser l'app → Noter le code
-3. **Login with GitHub Code** → Recevoir le JWT token
-4. **Mettre à jour la variable** `token_github` dans l'environnement
-5. **Test Meme Creation** → Vérifier la création réussie
-6. **Vérifier dans l'admin** → L'utilisateur GitHub apparaît automatiquement
-
-*[Insérer screenshot : Collection OAuth complète dans Insomnia]*
-
-### Gestion des erreurs OAuth
-
-#### Erreurs courantes et solutions
-
-**❌ "Invalid client_id" :**
-- Vérifier le `CLIENT_ID` dans le `.env`
-- S'assurer que l'app GitHub est bien configurée
-
-**❌ "Redirect URI mismatch" :**  
-- Vérifier l'URL de callback dans les settings GitHub
-- Doit être exactement : `http://localhost:8055/auth/login/github/callback`
-
-**❌ "User already exists" :**
-- Un utilisateur avec le même email existe déjà
-- Directus gère automatiquement le linking des comptes
-
-#### Debug OAuth avec les logs Directus
-
-```bash
-# Logs détaillés pour debug OAuth
-DEBUG="directus:auth" npm run directus:dev
-```
-
-### Configuration pour la production
-
-#### Variables production
-
-```env
-# Production OAuth settings
-AUTH_GITHUB_CLIENT_ID="client_id_production"
-AUTH_GITHUB_CLIENT_SECRET="client_secret_production"
-AUTH_GITHUB_REDIRECT_ALLOW_LIST="https://votre-domaine.com,https://app.votre-domaine.com"
-
-# URLs de callback production
-# GitHub OAuth App callback: https://api.votre-domaine.com/auth/login/github/callback
-```
-
-#### Sécurité production
-
-- ✅ **HTTPS obligatoire** pour OAuth en production
-- ✅ **Secrets dans variables d'environnement** sécurisées  
-- ✅ **Whitelist des domaines** de redirection
-- ✅ **Scopes minimaux** GitHub (read:user, user:email)
-
----
-
-## 8. Configuration des rôles et permissions
+## 7. Configuration des rôles et permissions
 
 ### Système de permissions Directus
 
@@ -1055,31 +837,22 @@ Directus utilise un système **RBAC** (Role-Based Access Control) :
 - **Permissions** : Actions autorisées sur chaque collection
 - **Politiques** : Règles conditionnelles avancées
 
-### Création du rôle "Public"
+### Création du rôle "Authenticated User"
 
 1. **Accéder à la gestion des rôles**
-   - Settings → **Access Control** → **Roles**
+   - Settings → **User Roles**
    - Cliquer sur **"Create Role"**
 
 2. **Configuration du rôle**
-   - **Name** : `Public`
-   - **Description** : "Accès public en lecture seule"
-   - **App Access** : ❌ Désactivé
-   - **Admin Access** : ❌ Désactivé
-
-*[Insérer screenshot : Création du rôle Public]*
-
-### Création du rôle "Authenticated User"
-
-1. **Créer un second rôle**
    - Name : `Authenticated User`
    - Description : "Utilisateurs connectés pouvant créer des memes"
-   - App Access : ❌ Désactivé
-   - Admin Access : ❌ Désactivé
+3. **Creation d'une Access Policie**
+   - dans le role Authenticated User -> Policies -> Create New
+   - Policy Name : `Authenticated User`
 
 ### Configuration des permissions publiques (rôle Public)
 
-Pour chaque collection, définir les permissions :
+Pour chaque collection, définir les permissions (Access Policies) :
 
 **Collection Memes (Public) :**
 - **Read** : ✅ Tous les items
@@ -1089,26 +862,24 @@ Pour chaque collection, définir les permissions :
 
 **Collection Tags (Public) :**
 - **Read** : ✅ Tous les items
-- **Create** : ✅ Oui (permet aux utilisateurs de créer de nouveaux tags)
+- **Create** : ❌ Aucun
 - **Update/Delete** : ❌ Aucun
 
-
-
-*[Insérer screenshot : Configuration des permissions]*
+*[Insérer screenshot directus6 : Configuration des permissions]*
 
 ### Configuration des permissions utilisateurs authentifiés
 
 **Collection Memes (Authenticated User) :**
 - **Read** : ✅ Tous les items
-- **Create** : ✅ Avec règle `user_created = $CURRENT_USER` (automatique)
-- **Update** : ✅ Seulement ses propres memes (`user_created = $CURRENT_USER`)
-- **Delete** : ✅ Seulement ses propres memes (`user_created = $CURRENT_USER`)
+- **Create** : ✅ Tous les items
+- **Update** : ✅ Seulement ses propres memes (`user_created Equals $CURRENT_USER`)
+- **Delete** : ✅ Seulement ses propres memes (`user_created Equals $CURRENT_USER`)
 
 **Collection Memes_Likes (Authenticated User) :**
 - **Read** : ✅ Tous les items
-- **Create** : ✅ Avec règle `user_id = $CURRENT_USER` (pour liker)
-- **Delete** : ✅ Seulement ses propres likes (`user_id = $CURRENT_USER`)
-- **Update** : ❌ Aucun (pas besoin de modifier un like)
+- **Create** : ✅ Tous les items
+- **Delete** : ✅ Seulement ses propres likes (`user_id Equals $CURRENT_USER`)
+- **Update** : ✅ Seulement ses propres likes (`user_id Equals $CURRENT_USER`)
 
 **Collection Tags (Authenticated User) :**
 - **Read** : ✅ Tous les items
@@ -1118,20 +889,8 @@ Pour chaque collection, définir les permissions :
 **Collection Notifications (Authenticated User) :**
 - **Read** : ✅ Ses propres notifications (`user_id = $CURRENT_USER`)
 - **Create** : ❌ Aucun (créées automatiquement par le système)
-- **Update** : ✅ Seulement ses propres notifications (pour marquer comme lu)
-- **Delete** : ✅ Seulement ses propres notifications
-
-*[Insérer screenshot : Configuration permissions utilisateurs authentifiés]*
-
-### Permissions spéciales pour les tags
-
-Pour permettre aux utilisateurs de créer dynamiquement des tags lors de l'ajout de leurs memes :
-
-1. **Dans Tags → Create permissions**
-2. **Custom Access** → **All Access**
-3. **Validation** : Seul le champ `name` peut être renseigné
-
-*[Insérer screenshot : Configuration permissions tags]*
+- **Update** : ✅ Seulement ses propres notifications (pour marquer comme lu) (`user_id = $CURRENT_USER`)
+- **Delete** : ✅ Seulement ses propres notifications (`user_id = $CURRENT_USER`)
 
 ---
 
@@ -1143,6 +902,8 @@ Directus génère automatiquement :
 - **REST API** : `/items/collection-name`
 - **GraphQL API** : `/graphql`
 - **SDK TypeScript** : Client typé pour Angular
+
+> **Note importante :** Dans cette section, nous utiliserons l'authentification classique email/password pour apprendre les bases. L'authentification OAuth GitHub sera abordée plus tard comme fonctionnalité avancée une fois que l'API de base sera maîtrisée.
 
 ### Endpoints REST à tester
 
@@ -1350,27 +1111,137 @@ DELETE /items/[collection]/[id] # Supprimer un élément
 2. **Interactions sociales** (likes, consultation)
 3. **Gestion des permissions** (public vs authentifié)
 
-#### Phase 4 : Tests de recherche intelligente (Meilisearch)
+---
 
-**Objectif :** Valider la recherche avancée et la synchronisation automatique
+## 10. Configuration de l'authentification OAuth avec GitHub
 
-1. **Installation et configuration** Meilisearch
-2. **Synchronisation automatique** via hooks Directus
-3. **Endpoints de recherche custom** dans Directus
-4. **Tests de recherche** typo-tolérante et facettes
+### Pourquoi OAuth avec GitHub ?
 
-#### Phase 5 : Tests temps réel (WebSockets)
+L'**authentification OAuth** offre une expérience utilisateur moderne et sécurisée pour votre application Meme Manager :
 
-**Objectif :** Valider les notifications et événements en temps réel
+- ✅ **Simplicité utilisateur** : Pas besoin de créer un nouveau compte
+- ✅ **Sécurité renforcée** : GitHub gère l'authentification et les mots de passe
+- ✅ **Données enrichies** : Avatar, nom, email automatiquement récupérés
+- ✅ **Expérience moderne** : Standard des applications web actuelles
 
-1. **Connexion WebSocket** avec authentification
-2. **Souscription aux événements** de collections
-3. **Notifications automatiques** lors de création/modification
-4. **Interface temps réel** pour les interactions
+**Architecture OAuth GitHub + Directus :**
+```
+1. Frontend → Redirect GitHub OAuth
+2. GitHub → Code d'autorisation → Frontend  
+3. Frontend → Code → Directus
+4. Directus → Token GitHub → Données utilisateur
+5. Directus → JWT Token → Frontend (connecté)
+```
+
+### Étape 1 : Configuration GitHub OAuth App
+
+#### Créer une application OAuth sur GitHub
+
+1. **Se connecter à GitHub** et aller sur https://github.com/settings/developers
+2. **OAuth Apps** → **New OAuth App**
+3. **Remplir les informations** :
+   - **Application name** : "Meme Manager - Development"
+   - **Homepage URL** : `http://localhost:4200`
+   - **Application description** : "Application de gestion de memes pour le cours"
+   - **Authorization callback URL** : `http://localhost:8055/auth/login/github/callback`
+
+4. **Register application**
+5. **Noter les informations importantes** :
+   - **Client ID** : (sera public côté frontend)
+   - **Client Secret** : (garder secret côté backend)
+
+*[Insérer screenshot directus7.png: Configuration OAuth App GitHub]*
+
+### Étape 2 : Configuration Directus pour GitHub OAuth
+
+#### Variables d'environnement
+
+Ajouter dans votre fichier `.env` de Directus :
+
+```env
+# Configuration OAuth GitHub
+AUTH_PROVIDERS="github"
+
+AUTH_GITHUB_DRIVER="oauth2"
+AUTH_GITHUB_CLIENT_ID="votre_client_id_github"
+AUTH_GITHUB_CLIENT_SECRET="votre_client_secret_github"
+AUTH_GITHUB_SCOPE="read:user user:email"
+
+# URLs de redirection
+AUTH_GITHUB_AUTHORIZE_URL="https://github.com/login/oauth/authorize"
+AUTH_GITHUB_ACCESS_URL="https://github.com/login/oauth/access_token"
+AUTH_GITHUB_PROFILE_URL="https://api.github.com/user"
+
+# Configuration des champs utilisateur
+AUTH_GITHUB_IDENTIFIER_KEY="id"
+AUTH_GITHUB_EMAIL_KEY="email"
+AUTH_GITHUB_FIRST_NAME_KEY="name"
+AUTH_GITHUB_LAST_NAME_KEY=""
+AUTH_GITHUB_AVATAR_KEY="avatar_url"
+
+# Redirection après connexion
+AUTH_GITHUB_REDIRECT_ALLOW_LIST="http://localhost:4200"
+```
+
+#### Redémarrage de Directus
+
+```bash
+# Arrêter Directus (Ctrl+C)
+# Puis relancer
+npx directus start
+```
+
+### Étape 3 : Configuration des permissions OAuth
+
+#### Rôle par défaut pour les utilisateurs OAuth
+
+1. **Settings** → **Settings** → **User Registration**
+2. **User Registration Role** : Oui
+3. **User Role** : `Authenticated User`
+
+Les utilisateurs GitHub hériteront automatiquement des mêmes permissions que les utilisateurs classiques configurées précédemment.
+
+> 🔄 **Point de migration** : Après avoir configuré OAuth, créez une nouvelle migration pour capturer ces modifications :
+> ```bash
+> npx directus schema snapshot migrations/002_add_oauth_support.json
+> git add migrations/002_add_oauth_support.json  
+> git commit -m "feat: ajout support OAuth GitHub"
+> ```
+
+### Étape 4 : Test OAuth avec Insomnia
+
+#### Ajouter le dossier OAuth dans Insomnia
+
+1. **New Folder** : "🔐 OAuth GitHub (Bonus)"
+2. **Ajouter ces requêtes de test**
+
+#### Requête 1 : URL de redirection GitHub
+
+```http
+GET {{ _.base_url }}/auth/github
+```
+
+#### Requête 2 : Finalisation de la connexion
+
+```http
+POST {{ _.base_url }}/auth/login/github
+Content-Type: application/json
+
+{
+  "code": "code_authorization_github"
+}
+```
+
+### Workflow OAuth complet
+
+1. **Get GitHub Auth URL** → Copier l'URL d'autorisation
+2. **Navigateur** → Autoriser l'app → Noter le code
+3. **Login with GitHub Code** → Recevoir le JWT token
+4. **Tester les permissions** → Même fonctionnalités que l'auth classique
 
 ---
 
-## 10. Recherche intelligente avec Meilisearch
+## 11. Recherche intelligente avec Meilisearch (Bonus avancé)
 
 ### Pourquoi ajouter Meilisearch ?
 
@@ -1433,7 +1304,6 @@ MEILISEARCH_INDEX_MEMES=memes_index
 #### Étape 3 : Installation du SDK Meilisearch dans Directus
 
 ```bash
-cd poc/directus-backend
 npm install meilisearch
 ```
 
@@ -1646,8 +1516,6 @@ export default (router, { env, services, exceptions }) => {
 };
 ```
 
-*[Insérer screenshot : Structure endpoints custom avec le fichier de recherche]*
-
 ### Configuration avancée de l'index
 
 #### Script d'initialisation de l'index
@@ -1713,7 +1581,13 @@ async function initializeIndex() {
 initializeIndex();
 ```
 
-*[Insérer screenshot : Exécution du script d'initialisation]*
+
+> 🔄 **Point de migration** : Après avoir ajouté les extensions Meilisearch (hooks et endpoints), créez une migration :
+> ```bash
+> npx directus schema snapshot migrations/003_add_meilisearch_extensions.json
+> git add migrations/003_add_meilisearch_extensions.json
+> git commit -m "feat: ajout extensions Meilisearch pour recherche avancée"
+> ```
 
 ### 🧪 Test de la recherche avec Insomnia
 
@@ -1773,11 +1647,9 @@ GET {{ _.base_url }}/search/memes/facets
 }
 ```
 
-*[Insérer screenshot : Tests Meilisearch avec highlighting dans Insomnia]*
-
 ---
 
-## 11. WebSockets et temps réel avec Directus
+## 12. WebSockets et temps réel avec Directus
 
 ### Comprendre Directus Realtime
 
@@ -1933,6 +1805,13 @@ export default ({ action }) => {
 ```
 
 *[Insérer screenshot : Configuration Hook dans Directus]*
+
+> 🔄 **Point de migration** : Après avoir ajouté des hooks WebSocket personnalisés, créez une migration :
+> ```bash
+> npx directus schema snapshot migrations/004_add_websocket_hooks.json
+> git add migrations/004_add_websocket_hooks.json
+> git commit -m "feat: ajout hooks notifications temps réel"
+> ```
 
 ### Cas d'usage avancés
 
@@ -2296,6 +2175,15 @@ Votre backend Directus est maintenant **prêt à être consommé** par n'importe
 
 L'avantage de cette approche : **Un seul backend, plusieurs frontends possibles !**
 
+### 🔄 Gestion des migrations maîtrisée
+
+**Versioning de schéma professionnel :**
+- Migrations incrémentales créées à chaque étape importante
+- Structure de données versionnée avec Git
+- Déploiement sécurisé en production via les snapshots
+- Collaboration facilitée entre développeurs
+- Rollback possible en cas de problème
+
 ### 📋 Checklist de validation finale
 
 Avant de passer au frontend, vérifiez que :
@@ -2306,6 +2194,7 @@ Avant de passer au frontend, vérifiez que :
 - ✅ Les uploads d'images et transformations sont opérationnels
 - ✅ Les relations entre collections sont correctes
 - ✅ L'interface admin permet de gérer le contenu facilement
+- ✅ **Migrations créées** pour versioner votre schéma de données
 
 ### 🎯 Prochaine étape : Frontend Angular
 
