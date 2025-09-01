@@ -1,0 +1,1734 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>🎭 Tutoriel Backend Directus - Projet Meme Manager</title>
+    <style>
+        :root {
+            --primary-color: #4f46e5;
+            --secondary-color: #06b6d4;
+            --success-color: #10b981;
+            --warning-color: #f59e0b;
+            --danger-color: #ef4444;
+            --info-color: #3b82f6;
+            --dark-color: #1f2937;
+            --light-color: #f9fafb;
+            --border-color: #e5e7eb;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            line-height: 1.6;
+            color: var(--dark-color);
+            background: var(--light-color);
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 0 20px;
+        }
+
+        header {
+            background: linear-gradient(135deg, var(--primary-color), var(--secondary-color));
+            color: white;
+            padding: 2rem 0;
+            text-align: center;
+            margin-bottom: 2rem;
+        }
+
+        header h1 {
+            font-size: 2.5rem;
+            font-weight: 800;
+            margin-bottom: 0.5rem;
+        }
+
+        header p {
+            font-size: 1.2rem;
+            opacity: 0.9;
+        }
+
+        .toc {
+            background: white;
+            border-radius: 12px;
+            padding: 2rem;
+            margin-bottom: 2rem;
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+        }
+
+        .toc h2 {
+            color: var(--primary-color);
+            margin-bottom: 1rem;
+            font-size: 1.5rem;
+        }
+
+        .toc ol {
+            list-style: none;
+            counter-reset: section;
+        }
+
+        .toc li {
+            counter-increment: section;
+            margin-bottom: 0.5rem;
+        }
+
+        .toc li::before {
+            content: counter(section) ". ";
+            color: var(--primary-color);
+            font-weight: 600;
+        }
+
+        .toc a {
+            color: var(--dark-color);
+            text-decoration: none;
+            transition: color 0.2s;
+        }
+
+        .toc a:hover {
+            color: var(--primary-color);
+        }
+
+        .section {
+            background: white;
+            border-radius: 12px;
+            padding: 2rem;
+            margin-bottom: 2rem;
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+        }
+
+        h2 {
+            color: var(--primary-color);
+            font-size: 2rem;
+            margin-bottom: 1.5rem;
+            border-bottom: 3px solid var(--primary-color);
+            padding-bottom: 0.5rem;
+        }
+
+        h3 {
+            color: var(--secondary-color);
+            font-size: 1.5rem;
+            margin: 2rem 0 1rem 0;
+        }
+
+        h4 {
+            color: var(--dark-color);
+            font-size: 1.2rem;
+            margin: 1.5rem 0 1rem 0;
+            font-weight: 600;
+        }
+
+        .alert {
+            padding: 1rem;
+            border-radius: 8px;
+            margin: 1.5rem 0;
+            border-left: 4px solid;
+        }
+
+        .alert.info {
+            background-color: #dbeafe;
+            border-color: var(--info-color);
+            color: #1e40af;
+        }
+
+        .alert.warning {
+            background-color: #fef3c7;
+            border-color: var(--warning-color);
+            color: #92400e;
+        }
+
+        .alert.success {
+            background-color: #d1fae5;
+            border-color: var(--success-color);
+            color: #065f46;
+        }
+
+        .alert.danger {
+            background-color: #fee2e2;
+            border-color: var(--danger-color);
+            color: #991b1b;
+        }
+
+        .alert strong {
+            display: block;
+            margin-bottom: 0.5rem;
+        }
+
+        code {
+            background: #f3f4f6;
+            padding: 0.2rem 0.4rem;
+            border-radius: 4px;
+            font-family: 'Fira Code', monospace;
+            font-size: 0.9rem;
+        }
+
+        pre {
+            background: var(--dark-color);
+            color: #e5e7eb;
+            padding: 1.5rem;
+            border-radius: 8px;
+            overflow-x: auto;
+            margin: 1rem 0;
+        }
+
+        pre code {
+            background: transparent;
+            padding: 0;
+            color: inherit;
+        }
+
+        .code-block {
+            position: relative;
+            margin: 1.5rem 0;
+        }
+
+        .code-header {
+            background: var(--primary-color);
+            color: white;
+            padding: 0.5rem 1rem;
+            border-radius: 8px 8px 0 0;
+            font-size: 0.9rem;
+            font-weight: 500;
+        }
+
+        .code-header + pre {
+            margin-top: 0;
+            border-radius: 0 0 8px 8px;
+        }
+
+        .checklist {
+            list-style: none;
+            padding-left: 0;
+        }
+
+        .checklist li {
+            margin: 0.5rem 0;
+            display: flex;
+            align-items: center;
+        }
+
+        .checklist li::before {
+            content: "✅";
+            margin-right: 0.5rem;
+            font-size: 1.1rem;
+        }
+
+        .feature-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 1.5rem;
+            margin: 2rem 0;
+        }
+
+        .feature-card {
+            background: #f8fafc;
+            border: 1px solid var(--border-color);
+            border-radius: 8px;
+            padding: 1.5rem;
+            transition: transform 0.2s, box-shadow 0.2s;
+        }
+
+        .feature-card:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 25px -8px rgba(0, 0, 0, 0.1);
+        }
+
+        .feature-card h4 {
+            color: var(--primary-color);
+            margin-top: 0;
+        }
+
+        .diagram {
+            background: white;
+            border: 2px dashed var(--border-color);
+            border-radius: 8px;
+            padding: 2rem;
+            text-align: center;
+            margin: 1.5rem 0;
+            color: #6b7280;
+            font-style: italic;
+        }
+
+        .badge {
+            display: inline-block;
+            padding: 0.25rem 0.5rem;
+            border-radius: 4px;
+            font-size: 0.8rem;
+            font-weight: 500;
+            margin-right: 0.5rem;
+        }
+
+        .badge.new {
+            background: var(--success-color);
+            color: white;
+        }
+
+        .badge.advanced {
+            background: var(--warning-color);
+            color: white;
+        }
+
+        .badge.bonus {
+            background: var(--info-color);
+            color: white;
+        }
+
+        .navigation {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 2rem 0;
+            border-top: 1px solid var(--border-color);
+            margin-top: 3rem;
+        }
+
+        .nav-button {
+            display: inline-flex;
+            align-items: center;
+            padding: 0.75rem 1.5rem;
+            background: var(--primary-color);
+            color: white;
+            text-decoration: none;
+            border-radius: 8px;
+            font-weight: 500;
+            transition: background-color 0.2s;
+        }
+
+        .nav-button:hover {
+            background: #3730a3;
+        }
+
+        .nav-button.disabled {
+            background: #9ca3af;
+            cursor: not-allowed;
+        }
+
+        footer {
+            background: var(--dark-color);
+            color: white;
+            padding: 3rem 0;
+            margin-top: 4rem;
+        }
+
+        .footer-content {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 2rem;
+        }
+
+        .footer-section h3 {
+            color: var(--secondary-color);
+            margin-bottom: 1rem;
+        }
+
+        .footer-section ul {
+            list-style: none;
+        }
+
+        .footer-section li {
+            margin-bottom: 0.5rem;
+        }
+
+        .footer-section a {
+            color: #d1d5db;
+            text-decoration: none;
+            transition: color 0.2s;
+        }
+
+        .footer-section a:hover {
+            color: var(--secondary-color);
+        }
+
+        @media (max-width: 768px) {
+            .container {
+                padding: 0 15px;
+            }
+
+            header h1 {
+                font-size: 2rem;
+            }
+
+            .section {
+                padding: 1.5rem;
+            }
+
+            .feature-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+    </style>
+</head>
+<body>
+    <header>
+        <div class="container">
+            <h1>🎭 Tutoriel Backend Directus</h1>
+            <p>Projet Meme Manager - Guide complet pour créer une API moderne</p>
+        </div>
+    </header>
+
+    <main class="container">
+        <div class="toc">
+            <h2>📋 Table des Matières</h2>
+            <ol>
+                <li><a href="#introduction">Introduction à Directus</a></li>
+                <li><a href="#architecture">Architecture du projet</a></li>
+                <li><a href="#configuration">Configuration initiale</a></li>
+                <li><a href="#collections">Création des collections</a></li>
+                <li><a href="#relations">Relations entre collections</a></li>
+                <li><a href="#medias">Gestion des médias</a></li>
+                <li><a href="#permissions">Configuration des rôles et permissions</a></li>
+                <li><a href="#api">API et intégration</a></li>
+                <li><a href="#tests">Tests et validation</a></li>
+                <li><a href="#oauth">Configuration OAuth GitHub <span class="badge bonus">Bonus</span></a></li>
+                <li><a href="#meilisearch">Recherche intelligente <span class="badge advanced">Avancé</span></a></li>
+                <li><a href="#websockets">WebSockets temps réel <span class="badge advanced">Avancé</span></a></li>
+            </ol>
+        </div>
+
+        <section id="introduction" class="section">
+            <h2>1. Introduction à Directus</h2>
+            
+            <h3>Qu'est-ce que Directus ?</h3>
+            <p>Directus est un <strong>headless CMS</strong> (Content Management System) moderne qui transforme n'importe quelle base de données SQL en une API REST/GraphQL complète avec une interface d'administration intuitive.</p>
+
+            <h4>Concepts clés :</h4>
+            <ul>
+                <li><strong>Database-first</strong> : Directus s'adapte à votre schéma de base de données existant</li>
+                <li><strong>Headless</strong> : Sépare le backend (gestion des données) du frontend (interface utilisateur)</li>
+                <li><strong>API-first</strong> : Génère automatiquement des APIs REST et GraphQL</li>
+                <li><strong>No vendor lock-in</strong> : Vos données restent dans une base SQL standard</li>
+            </ul>
+
+            <h3>Avantages pour notre projet Meme Manager</h3>
+            <div class="feature-grid">
+                <div class="feature-card">
+                    <h4>🖼️ Gestion automatique des médias</h4>
+                    <p>Upload, transformations et optimisation d'images automatiques</p>
+                </div>
+                <div class="feature-card">
+                    <h4>⚙️ Interface d'administration</h4>
+                    <p>Interface clé en main pour gérer le contenu</p>
+                </div>
+                <div class="feature-card">
+                    <h4>🔌 API REST/GraphQL</h4>
+                    <p>APIs générées automatiquement selon votre modèle</p>
+                </div>
+                <div class="feature-card">
+                    <h4>🔒 Système de permissions</h4>
+                    <p>Contrôle granulaire des accès et permissions</p>
+                </div>
+                <div class="feature-card">
+                    <h4>📦 TypeScript SDK</h4>
+                    <p>Client typé pour l'intégration Angular</p>
+                </div>
+                <div class="feature-card">
+                    <h4>🚀 Prêt pour la production</h4>
+                    <p>Scalable et optimisé pour les applications modernes</p>
+                </div>
+            </div>
+
+            <div class="diagram">
+                [Insérer screenshot : Interface d'administration Directus]
+            </div>
+        </section>
+
+        <section id="architecture" class="section">
+            <h2>2. Architecture du projet</h2>
+            
+            <div class="alert info">
+                <strong>📁 Note pour les étudiants :</strong>
+                Si vous choisissez le projet UTAU Editor, référez-vous au fichier <code>tutoriel-directus-utau-editor.md</code> pour cette section. L'architecture présentée ici est spécifique au Meme Manager.
+            </div>
+
+            <h3>Structure de données du Meme Manager</h3>
+            <p>Notre application va gérer :</p>
+
+            <div class="code-block">
+                <div class="code-header">Structure hiérarchique</div>
+                <pre><code>👤 Utilisateurs (Users) - SYSTÈME DIRECTUS INTÉGRÉ
+├── 🎭 Memes créés
+├── ❤️ Memes likés  
+├── 👤 Profil (nom, email, avatar)
+└── 🔐 Authentification
+
+🎭 Memes
+├── 🖼️ Image de base
+├── 🏷️ Tags (multiples)
+├── 👤 Créateur (utilisateur connecté)
+├── 📊 Statistiques (vues, likes)
+└── ❤️ Liste des utilisateurs qui ont liké
+
+🏷️ Tags
+└── 📛 Nom
+
+🔔 Notifications (Système temps réel)
+├── 👤 Utilisateur destinataire
+├── 📝 Message de notification
+├── 🎭 Meme associé (optionnel)
+├── 🔄 Type d'événement (nouveau_meme, nouveau_like, nouveau_tag)
+├── ✅ Statut (lu/non_lu)
+└── 📅 Date de création</code></pre>
+            </div>
+
+            <h3>Modèle Conceptuel de Données (MCD)</h3>
+            <div class="diagram">
+                [Diagramme Mermaid du MCD - Relations entre DIRECTUS_USERS, MEMES, TAGS, MEMES_LIKES, NOTIFICATIONS et DIRECTUS_FILES]
+            </div>
+
+            <h4>Relations et Cardinalités</h4>
+            <div class="feature-grid">
+                <div class="feature-card">
+                    <h4>1️⃣ USERS → MEMES (1:N)</h4>
+                    <p>Un utilisateur peut créer plusieurs memes. Un meme a un seul créateur.</p>
+                </div>
+                <div class="feature-card">
+                    <h4>2️⃣ MEMES → TAGS (N:M)</h4>
+                    <p>Un meme peut avoir plusieurs tags. Un tag peut être utilisé par plusieurs memes.</p>
+                </div>
+                <div class="feature-card">
+                    <h4>3️⃣ USERS → MEMES (N:M)</h4>
+                    <p>Système de likes : un utilisateur peut liker plusieurs memes.</p>
+                </div>
+                <div class="feature-card">
+                    <h4>4️⃣ MEMES → FILES (N:1)</h4>
+                    <p>Un meme utilise une image principale stockée dans directus_files.</p>
+                </div>
+            </div>
+
+            <h3>Système d'utilisateurs Directus intégré</h3>
+            <div class="alert success">
+                <strong>🔑 Collection directus_users pré-existante</strong>
+                Directus inclut par défaut un système complet de gestion des utilisateurs avec authentification classique ET OAuth (GitHub, Google, etc.).
+            </div>
+
+            <h4>Champs principaux disponibles :</h4>
+            <ul class="checklist">
+                <li><code>id</code> : UUID unique de l'utilisateur</li>
+                <li><code>first_name / last_name</code> : Nom et prénom</li>
+                <li><code>email</code> : Email unique (utilisé pour la connexion)</li>
+                <li><code>password</code> : Mot de passe hashé automatiquement</li>
+                <li><code>avatar</code> : Photo de profil (relation vers directus_files)</li>
+                <li><code>provider</code> : Méthode de connexion (default/github/google)</li>
+            </ul>
+
+            <h4>Avantages du système intégré :</h4>
+            <ul class="checklist">
+                <li>Authentification JWT automatique</li>
+                <li>Hash des mots de passe sécurisé</li>
+                <li>Validation email intégrée</li>
+                <li>Système de rôles et permissions</li>
+                <li>API d'authentification prête à l'emploi</li>
+                <li>Interface admin pour gérer les utilisateurs</li>
+            </ul>
+        </section>
+
+        <section id="configuration" class="section">
+            <h2>3. Configuration initiale</h2>
+
+            <h3>Prérequis techniques</h3>
+            <ul class="checklist">
+                <li>Node.js >= 18.13.0</li>
+                <li>npm >= 9.0.0</li>
+                <li>Git</li>
+            </ul>
+
+            <h3>Étape 1 : Initialisation rapide avec le CLI Directus</h3>
+            <div class="alert info">
+                <strong>💡 La méthode moderne et simple</strong>
+                Nous utiliserons le CLI officiel Directus pour créer automatiquement la structure du projet.
+            </div>
+
+            <div class="code-block">
+                <div class="code-header">Commandes d'initialisation</div>
+                <pre><code># Créer un nouveau dossier qui contiendra votre projet
+mkdir mon-projet-meme-manager
+
+# Naviguer dans le dossier créé
+cd mon-projet-meme-manager
+
+# Initialiser un projet Directus
+npm init directus-projet@latest .</code></pre>
+            </div>
+
+            <p>Cette commande va automatiquement :</p>
+            <ul class="checklist">
+                <li>Créer la structure de fichiers</li>
+                <li>Installer toutes les dépendances</li>
+                <li>Configurer le fichier .env avec des valeurs par défaut</li>
+                <li>Préparer les scripts npm</li>
+            </ul>
+
+            <div class="alert warning">
+                <strong>⚙️ Configuration lors de l'exécution</strong>
+                Le CLI vous posera quelques questions pour personnaliser votre projet :
+                <ul>
+                    <li>Database client : <strong>SQLite</strong></li>
+                    <li>Database file path : <strong>./data/database.db</strong></li>
+                    <li>Admin email : <strong>ton-email@example.com</strong></li>
+                    <li>Admin password : <strong>ton-mot-de-passe</strong></li>
+                </ul>
+            </div>
+
+            <h3>Étape 2 : Initialisation Git</h3>
+            <div class="code-block">
+                <div class="code-header">Configuration Git</div>
+                <pre><code># Créer un fichier .gitignore
+cat > .gitignore << EOF
+node_modules/
+.env
+data.db
+uploads/
+
+.vscode/
+.DS_Store
+.idea/
+EOF
+
+# Initialiser le dépôt Git
+git init
+git add .
+git commit -m "Initial commit - Setup Directus project"</code></pre>
+            </div>
+
+            <h3>Étape 3 : Premier démarrage</h3>
+            <div class="code-block">
+                <div class="code-header">Lancement du serveur</div>
+                <pre><code># Démarrer Directus en mode développement
+npx directus start</code></pre>
+            </div>
+
+            <h3>Vérification de l'installation</h3>
+            <div class="alert success">
+                <strong>✅ Checklist de validation</strong>
+                Vérifiez que tous ces points sont validés :
+                <ul class="checklist">
+                    <li>Directus démarre sans erreur</li>
+                    <li>Interface accessible sur http://localhost:8055</li>
+                    <li>Connexion admin fonctionnelle</li>
+                    <li>Base de données SQLite créée automatiquement</li>
+                    <li>Structure de fichiers complète</li>
+                </ul>
+            </div>
+        </section>
+
+        <section id="collections" class="section">
+            <h2>4. Création des collections</h2>
+
+            <div class="alert info">
+                <strong>📚 Comprendre les Collections Directus</strong>
+                Une <strong>collection</strong> dans Directus = une <strong>table</strong> en base de données. Chaque collection contient des <strong>champs</strong> (colonnes) avec des <strong>types</strong> spécifiques.
+            </div>
+
+            <h3>🏷️ Étape 1 : Créer la collection "Tags"</h3>
+            
+            <h4>Configuration de base</h4>
+            <ol>
+                <li>Dans le menu principal → <strong>Settings</strong> → <strong>Data Model</strong></li>
+                <li>Cliquer sur <strong>"Create Collection"</strong></li>
+                <li>
+                    <strong>Collection Name</strong> : <code>tags</code><br>
+                    <strong>Primary key</strong> : <code>id</code> (UUID, auto-généré)<br>
+                    <strong>Cocher</strong> : Created On, Updated On (timestamps automatiques)
+                </li>
+                <li>Cliquer sur <strong>"Finish Setup"</strong></li>
+            </ol>
+
+            <h4>Ajout des champs</h4>
+            <div class="feature-card">
+                <h4>Champ "name" (Nom du tag)</h4>
+                <ul>
+                    <li><strong>Type</strong> : String</li>
+                    <li><strong>Key</strong> : <code>name</code></li>
+                    <li><strong>Required</strong> : ✅ Oui</li>
+                    <li><strong>Unique</strong> : ✅ Oui</li>
+                </ul>
+            </div>
+
+            <h3>🎭 Étape 2 : Créer la collection "Memes"</h3>
+            
+            <h4>Configuration de base</h4>
+            <ol>
+                <li><strong>Collection Name</strong> : <code>memes</code></li>
+                <li><strong>Primary key</strong> : <code>id</code> (UUID, auto-généré)</li>
+                <li><strong>Cocher</strong> : Created On, Updated On et Created By</li>
+                <li>Cliquer sur <strong>"Finish Setup"</strong></li>
+            </ol>
+
+            <h4>Ajout des champs essentiels</h4>
+            <div class="feature-grid">
+                <div class="feature-card">
+                    <h4>Champ "title"</h4>
+                    <ul>
+                        <li><strong>Type</strong> : String</li>
+                        <li><strong>Key</strong> : <code>title</code></li>
+                        <li><strong>Required</strong> : ✅ Oui</li>
+                        <li><strong>Interface</strong> : Input</li>
+                    </ul>
+                </div>
+                <div class="feature-card">
+                    <h4>Champ "image"</h4>
+                    <ul>
+                        <li><strong>Type</strong> : Image</li>
+                        <li><strong>Key</strong> : <code>image</code></li>
+                        <li><strong>Required</strong> : ✅ Oui</li>
+                        <li><strong>Crop to fit</strong> : Non</li>
+                    </ul>
+                </div>
+                <div class="feature-card">
+                    <h4>Champ "views"</h4>
+                    <ul>
+                        <li><strong>Type</strong> : Integer</li>
+                        <li><strong>Key</strong> : <code>views</code></li>
+                        <li><strong>Default Value</strong> : <code>0</code></li>
+                        <li><strong>Interface</strong> : Input</li>
+                    </ul>
+                </div>
+                <div class="feature-card">
+                    <h4>Champ "likes"</h4>
+                    <ul>
+                        <li><strong>Type</strong> : Integer</li>
+                        <li><strong>Key</strong> : <code>likes</code></li>
+                        <li><strong>Default Value</strong> : <code>0</code></li>
+                        <li><strong>Interface</strong> : Input</li>
+                    </ul>
+                </div>
+            </div>
+
+            <div class="alert warning">
+                <strong>📝 À faire de même</strong>
+                Créez aussi les collections <code>memes_likes</code> et <code>notifications</code> en suivant le même processus et en vous référant au MCD de la section 2.
+            </div>
+
+            <div class="diagram">
+                [Insérer screenshots : Interface de création des collections dans Directus]
+            </div>
+        </section>
+
+        <section id="relations" class="section">
+            <h2>5. Relations entre collections</h2>
+
+            <h3>Comprendre les relations Directus</h3>
+            <p>Les relations permettent de lier les collections entre elles :</p>
+            <ul>
+                <li><strong>Many-to-One (M2O)</strong> : plusieurs éléments d'une collection pointent vers un seul élément d'une autre collection</li>
+                <li><strong>One-to-Many (O2M)</strong> : un élément d'une collection est lié à plusieurs éléments d'une autre collection (inverse de M2O)</li>
+                <li><strong>Many-to-Many (M2M)</strong> : plusieurs éléments d'une collection sont liés à plusieurs éléments d'une autre collection via une table de liaison</li>
+            </ul>
+
+            <h3>🔗 Étape 1 : Comprendre les relations avec directus_users</h3>
+            <div class="alert info">
+                <strong>🔄 Relations automatiques déjà créées</strong>
+                <ul>
+                    <li><code>user_created</code> : Directus ajoute automatiquement ce champ à toute collection avec "Accountability" activé</li>
+                    <li><code>date_created / date_updated</code> : Timestamps automatiques</li>
+                    <li>Ces champs se remplissent automatiquement selon l'utilisateur connecté</li>
+                </ul>
+            </div>
+
+            <h3>🔗 Étape 2 : Relation Memes → Tags (M2M)</h3>
+            <ol>
+                <li>Aller dans la collection <strong>Memes</strong> → Data Model → <code>memes</code></li>
+                <li>Cliquer sur <strong>"Create Field"</strong></li>
+                <li>Configurer le champ de relation :
+                    <ul>
+                        <li><strong>Type</strong> : Many to Many</li>
+                        <li><strong>Key</strong> : <code>tags</code></li>
+                        <li><strong>Display Name</strong> : "Tags"</li>
+                        <li><strong>Related Collection</strong> : <strong>tags</strong></li>
+                        <li><strong>Junction Collection</strong> : <strong>memes_tags</strong> (sera créée automatiquement)</li>
+                    </ul>
+                </li>
+            </ol>
+
+            <h3>🔗 Étape 3 : Relations inverses automatiques</h3>
+            <div class="alert success">
+                <strong>✨ Directus crée automatiquement les relations inverses</strong>
+                <ul>
+                    <li>Dans <code>tags</code> : champ virtuel <code>memes</code> (Many to Many)</li>
+                    <li>Dans <code>memes</code> : champ <code>tags</code> permettant la sélection multiple</li>
+                    <li>Dans <code>directus_users</code> : champ virtuel <code>memes</code> (ses memes créés)</li>
+                    <li>Dans <code>directus_users</code> : champ virtuel <code>memes_likes</code> (ses likes)</li>
+                    <li>Dans <code>memes</code> : champ virtuel <code>memes_likes</code> (qui a liké ce meme)</li>
+                </ul>
+            </div>
+
+            <h3>🔄 Étape 4 : Créer une migration du schéma (Recommandé)</h3>
+            <div class="alert warning">
+                <strong>📦 Pourquoi créer des migrations ?</strong>
+                Les <strong>migrations</strong> dans Directus permettent de :
+                <ul class="checklist">
+                    <li><strong>Versioner votre schéma de base de données</strong> comme du code</li>
+                    <li><strong>Synchroniser</strong> les modifications entre développement/production</li>
+                    <li><strong>Collaborer en équipe</strong> sans conflits de structure</li>
+                    <li><strong>Rollback</strong> en cas de problème</li>
+                    <li><strong>Documenter</strong> l'évolution de votre modèle de données</li>
+                </ul>
+            </div>
+
+            <h4>Créer votre première migration</h4>
+            <div class="code-block">
+                <div class="code-header">Via la CLI Directus</div>
+                <pre><code># Depuis votre dossier projet
+npx directus schema snapshot migrations/001_initial_meme_manager_schema.json</code></pre>
+            </div>
+
+            <h4>Workflow recommandé</h4>
+            <div class="code-block">
+                <div class="code-header">Cycle de migration</div>
+                <pre><code># 1. Développement : créer votre modèle via l'interface
+# 2. Créer une migration
+npx directus schema snapshot migrations/001_initial_schema.json
+
+# 3. Versionner avec Git
+git add migrations/001_initial_schema.json
+git commit -m "feat: migration initiale du schéma meme manager"
+
+# 4. En production : appliquer la migration  
+npx directus schema apply migrations/001_initial_schema.json</code></pre>
+            </div>
+
+            <div class="alert info">
+                <strong>🔄 Points de migration futurs</strong>
+                À chaque modification de structure dans ce tutoriel, nous créerons une nouvelle migration :
+                <ul>
+                    <li>Après l'ajout des champs OAuth (section 10)</li>
+                    <li>Après l'ajout des extensions Meilisearch (section 11)</li>
+                    <li>Avant chaque déploiement en production</li>
+                </ul>
+            </div>
+        </section>
+
+        <section id="medias" class="section">
+            <h2>6. Gestion des médias</h2>
+
+            <h3>Configuration du stockage de fichiers</h3>
+            <p>Directus gère automatiquement l'upload et la transformation des médias. Voici comment optimiser cette fonctionnalité pour notre projet.</p>
+
+            <h3>Transformations automatiques d'images</h3>
+            <ol>
+                <li>Accéder aux réglages de fichiers → Settings → Settings → <strong>Files & Storage</strong></li>
+                <li>Configuration des transformations :
+                    <ul>
+                        <li><strong>Thumbnail Generation</strong> : ✅ Activé</li>
+                        <li><strong>Fit</strong> : contain (pour éviter les découpages)</li>
+                        <li><strong>Height</strong> : 1000 (px)</li>
+                        <li><strong>Width</strong> : 1000 (px)</li>
+                        <li><strong>Quality</strong> : 80 (bon compromis qualité/taille)</li>
+                        <li><strong>Format</strong> : WebP (pour l'optimisation)</li>
+                    </ul>
+                </li>
+            </ol>
+
+            <h3>Utilisation des transformations dans l'API</h3>
+            <p>Directus permet de transformer les images à la volée via l'URL :</p>
+
+            <div class="code-block">
+                <div class="code-header">Exemples de transformations</div>
+                <pre><code># Image originale
+GET /assets/[file-id]
+
+# Redimensionnement
+GET /assets/[file-id]?width=400&height=400
+
+# Format et qualité
+GET /assets/[file-id]?format=webp&quality=80
+
+# Transformations combinées
+GET /assets/[file-id]?width=800&height=600&fit=cover&quality=85&format=webp</code></pre>
+            </div>
+
+            <div class="diagram">
+                [Insérer screenshot : Configuration des transformations dans l'interface Directus]
+            </div>
+        </section>
+
+        <section id="permissions" class="section">
+            <h2>7. Configuration des rôles et permissions</h2>
+
+            <h3>Système de permissions Directus</h3>
+            <p>Directus utilise un système <strong>RBAC</strong> (Role-Based Access Control) :</p>
+            <ul>
+                <li><strong>Rôles</strong> : Groupes d'utilisateurs avec des permissions spécifiques</li>
+                <li><strong>Permissions</strong> : Actions autorisées sur chaque collection</li>
+                <li><strong>Politiques</strong> : Règles conditionnelles avancées</li>
+            </ul>
+
+            <h3>Création du rôle "Public"</h3>
+            <ol>
+                <li>Accéder à la gestion des rôles → Settings → <strong>Access Control</strong> → <strong>Roles</strong></li>
+                <li>Cliquer sur <strong>"Create Role"</strong></li>
+                <li>Configuration du rôle :
+                    <ul>
+                        <li><strong>Name</strong> : <code>Public</code></li>
+                        <li><strong>Description</strong> : "Accès public en lecture seule"</li>
+                        <li><strong>App Access</strong> : ❌ Désactivé</li>
+                        <li><strong>Admin Access</strong> : ❌ Désactivé</li>
+                    </ul>
+                </li>
+            </ol>
+
+            <h3>Création du rôle "Authenticated User"</h3>
+            <div class="feature-card">
+                <h4>Configuration</h4>
+                <ul>
+                    <li><strong>Name</strong> : <code>Authenticated User</code></li>
+                    <li><strong>Description</strong> : "Utilisateurs connectés pouvant créer des memes"</li>
+                    <li><strong>App Access</strong> : ❌ Désactivé</li>
+                    <li><strong>Admin Access</strong> : ❌ Désactivé</li>
+                </ul>
+            </div>
+
+            <h3>Configuration des permissions</h3>
+
+            <h4>Collection Memes (Public vs Authenticated)</h4>
+            <div class="feature-grid">
+                <div class="feature-card">
+                    <h4>👥 Rôle Public</h4>
+                    <ul>
+                        <li><strong>Read</strong> : ✅ Tous les items</li>
+                        <li><strong>Create</strong> : ❌ Aucun</li>
+                        <li><strong>Update</strong> : ❌ Aucun</li>
+                        <li><strong>Delete</strong> : ❌ Aucun</li>
+                    </ul>
+                </div>
+                <div class="feature-card">
+                    <h4>🔐 Utilisateurs authentifiés</h4>
+                    <ul>
+                        <li><strong>Read</strong> : ✅ Tous les items</li>
+                        <li><strong>Create</strong> : ✅ Avec règle <code>user_created = $CURRENT_USER</code></li>
+                        <li><strong>Update</strong> : ✅ Seulement ses propres memes</li>
+                        <li><strong>Delete</strong> : ✅ Seulement ses propres memes</li>
+                    </ul>
+                </div>
+            </div>
+
+            <h4>Collection Memes_Likes (Authenticated User)</h4>
+            <div class="feature-card">
+                <ul>
+                    <li><strong>Read</strong> : ✅ Tous les items</li>
+                    <li><strong>Create</strong> : ✅ Avec règle <code>user_id = $CURRENT_USER</code> (pour liker)</li>
+                    <li><strong>Delete</strong> : ✅ Seulement ses propres likes</li>
+                    <li><strong>Update</strong> : ❌ Aucun (pas besoin de modifier un like)</li>
+                </ul>
+            </div>
+
+            <div class="alert success">
+                <strong>🔒 Sécurité automatique</strong>
+                Les règles <code>user_created = $CURRENT_USER</code> et <code>user_id = $CURRENT_USER</code> garantissent que les utilisateurs ne peuvent modifier que leurs propres contenus.
+            </div>
+
+            <div class="diagram">
+                [Insérer screenshot : Configuration des permissions dans l'interface Directus]
+            </div>
+        </section>
+
+        <section id="api" class="section">
+            <h2>8. API et intégration</h2>
+
+            <h3>Types d'API disponibles</h3>
+            <p>Directus génère automatiquement :</p>
+            <ul>
+                <li><strong>REST API</strong> : <code>/items/collection-name</code></li>
+                <li><strong>GraphQL API</strong> : <code>/graphql</code></li>
+                <li><strong>SDK TypeScript</strong> : Client typé pour Angular</li>
+            </ul>
+
+            <div class="alert info">
+                <strong>📝 Note importante</strong>
+                Dans cette section, nous utiliserons l'authentification classique email/password pour apprendre les bases. L'authentification OAuth GitHub sera abordée plus tard comme fonctionnalité avancée une fois que l'API de base sera maîtrisée.
+            </div>
+
+            <h3>Endpoints REST à tester</h3>
+
+            <h4>🔐 1. Authentification</h4>
+            <p><strong>Créer un compte utilisateur via l'interface :</strong></p>
+            <ol>
+                <li>Accéder à http://localhost:8055</li>
+                <li>Se connecter avec le compte admin</li>
+                <li>User Directory → Create User</li>
+                <li>Email: <code>test@example.com</code>, Password: <code>password123</code></li>
+                <li>Role: <code>Authenticated User</code></li>
+            </ol>
+
+            <div class="code-block">
+                <div class="code-header">Connexion via API</div>
+                <pre><code>POST http://localhost:8055/auth/login
+Content-Type: application/json
+
+{
+  "email": "test@example.com",
+  "password": "password123"
+}</code></pre>
+            </div>
+
+            <div class="code-block">
+                <div class="code-header">Réponse attendue</div>
+                <pre><code>{
+  "data": {
+    "access_token": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...",
+    "expires": 900000,
+    "refresh_token": "def50200..."
+  }
+}</code></pre>
+            </div>
+
+            <h4>📁 2. Upload d'image</h4>
+            <div class="code-block">
+                <div class="code-header">Requête d'upload</div>
+                <pre><code>POST http://localhost:8055/files
+Authorization: Bearer [access_token]
+Content-Type: multipart/form-data
+
+[Fichier image dans le form-data avec key "file"]</code></pre>
+            </div>
+            <p><strong>Réponse :</strong> UUID du fichier uploadé à utiliser pour les memes</p>
+
+            <h4>🏷️ 3. Création de tags</h4>
+            <div class="code-block">
+                <div class="code-header">Créer un tag</div>
+                <pre><code>POST http://localhost:8055/items/tags
+Authorization: Bearer [access_token]  
+Content-Type: application/json
+
+{
+  "name": "humor"
+}</code></pre>
+            </div>
+            <p>Créer plusieurs tags : "humor", "programmation", "reaction", "classique"</p>
+
+            <h4>🎭 4. Création d'un meme</h4>
+            <div class="code-block">
+                <div class="code-header">Créer un meme avec relations</div>
+                <pre><code>POST http://localhost:8055/items/memes
+Authorization: Bearer [access_token]
+Content-Type: application/json
+
+{
+  "title": "Mon premier meme",
+  "image": "uuid-du-fichier-uploadé",
+  "text_top": "Quand tu debugs",
+  "text_bottom": "Et ça marche du premier coup",
+  "tags": [
+    {"tags_id": "uuid-tag-humor"},
+    {"tags_id": "uuid-tag-programmation"}
+  ]
+}</code></pre>
+            </div>
+
+            <h4>📖 5. Lecture des memes avec relations</h4>
+            <div class="code-block">
+                <div class="code-header">Récupérer les memes avec leurs relations</div>
+                <pre><code>GET http://localhost:8055/items/memes?fields=*,tags.tags_id.name,user_created.first_name,user_created.last_name</code></pre>
+            </div>
+
+            <h4>❤️ 6. Système de likes</h4>
+            <div class="code-block">
+                <div class="code-header">Liker un meme</div>
+                <pre><code>POST http://localhost:8055/items/memes_likes
+Authorization: Bearer [access_token]
+Content-Type: application/json
+
+{
+  "meme_id": "uuid-du-meme"
+}</code></pre>
+            </div>
+
+            <h3>Tests avec Insomnia/Postman</h3>
+            <div class="alert success">
+                <strong>🔧 Outils recommandés</strong>
+                <ul>
+                    <li><strong>Insomnia</strong> : https://insomnia.rest (plus moderne et intuitif)</li>
+                    <li><strong>Postman</strong> : https://postman.com (plus populaire et complet)</li>
+                </ul>
+            </div>
+
+            <h4>Configuration de base</h4>
+            <ol>
+                <li>Créer un nouveau workspace/collection</li>
+                <li><strong>URL de base</strong> : <code>http://localhost:8055</code></li>
+                <li><strong>Headers communs</strong> :
+                    <div class="code-block">
+                        <pre><code>Content-Type: application/json
+Accept: application/json</code></pre>
+                    </div>
+                </li>
+            </ol>
+
+            <div class="diagram">
+                [Insérer screenshot : Interface Insomnia avec workspace Directus-Memes]
+            </div>
+        </section>
+
+        <section id="tests" class="section">
+            <h2>9. Tests et validation de l'API</h2>
+
+            <h3>Comprendre l'API REST de Directus</h3>
+            <p>Directus génère automatiquement une <strong>API REST complète</strong> basée sur votre modèle de données. Chaque collection devient un endpoint avec les opérations CRUD standard :</p>
+
+            <div class="code-block">
+                <div class="code-header">Structure des URLs</div>
+                <pre><code>GET    /items/[collection]     # Lire tous les éléments
+GET    /items/[collection]/[id] # Lire un élément spécifique
+POST   /items/[collection]     # Créer un nouvel élément
+PATCH  /items/[collection]/[id] # Modifier un élément
+DELETE /items/[collection]/[id] # Supprimer un élément</code></pre>
+            </div>
+
+            <h3>Avantages de cette approche</h3>
+            <div class="feature-grid">
+                <div class="feature-card">
+                    <h4>✅ Cohérence</h4>
+                    <p>Même structure pour toutes les collections</p>
+                </div>
+                <div class="feature-card">
+                    <h4>✅ Prévisibilité</h4>
+                    <p>Si vous connaissez le nom de la collection, vous connaissez l'API</p>
+                </div>
+                <div class="feature-card">
+                    <h4>✅ Flexibilité</h4>
+                    <p>Paramètres de requête puissants (filtres, relations, tri)</p>
+                </div>
+                <div class="feature-card">
+                    <h4>✅ Performance</h4>
+                    <p>Optimisations automatiques des requêtes SQL</p>
+                </div>
+            </div>
+
+            <h3>Méthodologie de test progressive</h3>
+
+            <h4>Phase 1 : Tests basiques (Collections isolées)</h4>
+            <div class="alert info">
+                <strong>🎯 Objectif</strong> : Valider que chaque collection fonctionne indépendamment
+                <ol>
+                    <li><strong>Tags</strong> (le plus simple - pas de relations)</li>
+                    <li><strong>Files</strong> (upload et transformations)</li>
+                    <li><strong>Users</strong> (authentification)</li>
+                </ol>
+            </div>
+
+            <h4>Phase 2 : Tests relationnels</h4>
+            <div class="alert warning">
+                <strong>🎯 Objectif</strong> : Valider les relations entre collections
+                <ol>
+                    <li><strong>Memes → Files</strong> (relation simple M2O)</li>
+                    <li><strong>Memes → Tags</strong> (relation complexe M2M)</li>
+                    <li><strong>Users → Memes</strong> (relation avec authentification)</li>
+                </ol>
+            </div>
+
+            <h4>Phase 3 : Tests de workflows complets</h4>
+            <div class="alert success">
+                <strong>🎯 Objectif</strong> : Valider des scénarios utilisateur réels
+                <ol>
+                    <li><strong>Création complète d'un meme</strong> (upload + tags + publication)</li>
+                    <li><strong>Interactions sociales</strong> (likes, consultation)</li>
+                    <li><strong>Gestion des permissions</strong> (public vs authentifié)</li>
+                </ol>
+            </div>
+
+            <h3>Workflows de test complets</h3>
+
+            <h4>🎯 Scénario 1 : Utilisateur crée son premier meme</h4>
+            <ol>
+                <li><strong>Authentification</strong> → récupérer le token JWT</li>
+                <li><strong>Upload image</strong> → récupérer l'UUID du fichier</li>
+                <li><strong>Créer tags</strong> (si nouveaux) → récupérer les UUIDs</li>
+                <li><strong>Créer meme</strong> avec image et tags</li>
+                <li><strong>Vérifier</strong> avec GET /items/memes</li>
+            </ol>
+
+            <h4>🎯 Scénario 2 : Interaction sociale (likes)</h4>
+            <ol>
+                <li><strong>Authentification</strong> utilisateur A</li>
+                <li><strong>Liker un meme</strong> d'un autre utilisateur</li>
+                <li><strong>Vérifier</strong> le like avec GET /items/memes_likes</li>
+                <li><strong>Authentification</strong> utilisateur B</li>
+                <li><strong>Liker le même meme</strong></li>
+                <li><strong>Compter les likes</strong> du meme</li>
+            </ol>
+
+            <div class="alert success">
+                <strong>✅ Validation finale</strong>
+                Avant de passer aux sections avancées, vérifiez que tous les endpoints fonctionnent correctement dans votre outil de test (Insomnia/Postman).
+            </div>
+        </section>
+
+        <section id="oauth" class="section">
+            <h2>10. Configuration OAuth GitHub <span class="badge bonus">Bonus avancé</span></h2>
+
+            <div class="alert info">
+                <strong>🎯 Pourquoi OAuth avec GitHub ?</strong>
+                L'authentification OAuth offre une expérience utilisateur moderne et sécurisée :
+                <ul class="checklist">
+                    <li>Simplicité utilisateur : Pas besoin de créer un nouveau compte</li>
+                    <li>Sécurité renforcée : GitHub gère l'authentification et les mots de passe</li>
+                    <li>Données enrichies : Avatar, nom, email automatiquement récupérés</li>
+                    <li>Expérience moderne : Standard des applications web actuelles</li>
+                </ul>
+            </div>
+
+            <h3>Architecture OAuth GitHub + Directus</h3>
+            <div class="code-block">
+                <div class="code-header">Flux OAuth</div>
+                <pre><code>1. Frontend → Redirect GitHub OAuth
+2. GitHub → Code d'autorisation → Frontend  
+3. Frontend → Code → Directus
+4. Directus → Token GitHub → Données utilisateur
+5. Directus → JWT Token → Frontend (connecté)</code></pre>
+            </div>
+
+            <h3>Étape 1 : Configuration GitHub OAuth App</h3>
+            <ol>
+                <li>Se connecter à GitHub et aller sur https://github.com/settings/developers</li>
+                <li><strong>OAuth Apps</strong> → <strong>New OAuth App</strong></li>
+                <li>Remplir les informations :
+                    <ul>
+                        <li><strong>Application name</strong> : "Meme Manager - Development"</li>
+                        <li><strong>Homepage URL</strong> : <code>http://localhost:4200</code></li>
+                        <li><strong>Application description</strong> : "Application de gestion de memes pour le cours"</li>
+                        <li><strong>Authorization callback URL</strong> : <code>http://localhost:8055/auth/login/github/callback</code></li>
+                    </ul>
+                </li>
+                <li><strong>Register application</strong></li>
+                <li>Noter les informations importantes :
+                    <ul>
+                        <li><strong>Client ID</strong> : (sera public côté frontend)</li>
+                        <li><strong>Client Secret</strong> : (garder secret côté backend)</li>
+                    </ul>
+                </li>
+            </ol>
+
+            <h3>Étape 2 : Configuration Directus</h3>
+            <div class="code-block">
+                <div class="code-header">Variables d'environnement .env</div>
+                <pre><code># Configuration OAuth GitHub
+AUTH_PROVIDERS="github"
+
+AUTH_GITHUB_DRIVER="oauth2"
+AUTH_GITHUB_CLIENT_ID="votre_client_id_github"
+AUTH_GITHUB_CLIENT_SECRET="votre_client_secret_github"
+AUTH_GITHUB_SCOPE="read:user user:email"
+
+# URLs de redirection
+AUTH_GITHUB_AUTHORIZE_URL="https://github.com/login/oauth/authorize"
+AUTH_GITHUB_ACCESS_URL="https://github.com/login/oauth/access_token"
+AUTH_GITHUB_PROFILE_URL="https://api.github.com/user"
+
+# Configuration des champs utilisateur
+AUTH_GITHUB_IDENTIFIER_KEY="id"
+AUTH_GITHUB_EMAIL_KEY="email"
+AUTH_GITHUB_FIRST_NAME_KEY="name"
+AUTH_GITHUB_LAST_NAME_KEY=""
+AUTH_GITHUB_AVATAR_KEY="avatar_url"
+
+# Redirection après connexion
+AUTH_GITHUB_REDIRECT_ALLOW_LIST="http://localhost:4200"</code></pre>
+            </div>
+
+            <h4>Redémarrage de Directus</h4>
+            <div class="code-block">
+                <pre><code># Arrêter Directus (Ctrl+C)
+# Puis relancer
+npx directus start</code></pre>
+            </div>
+
+            <div class="alert warning">
+                <strong>🔄 Point de migration</strong>
+                Après avoir configuré OAuth, créez une nouvelle migration pour capturer ces modifications :
+                <div class="code-block">
+                    <pre><code>npx directus schema snapshot migrations/002_add_oauth_support.json
+git add migrations/002_add_oauth_support.json  
+git commit -m "feat: ajout support OAuth GitHub"</code></pre>
+                </div>
+            </div>
+
+            <h3>Test OAuth avec Insomnia</h3>
+            <div class="alert info">
+                <strong>📝 Collection OAuth dans Insomnia</strong>
+                Créez un nouveau dossier "🔐 OAuth GitHub (Bonus)" avec ces requêtes :
+            </div>
+
+            <h4>Requête 1 : URL de redirection GitHub</h4>
+            <div class="code-block">
+                <pre><code>GET {{ _.base_url }}/auth/github</code></pre>
+            </div>
+
+            <h4>Requête 2 : Finalisation de la connexion</h4>
+            <div class="code-block">
+                <pre><code>POST {{ _.base_url }}/auth/login/github
+Content-Type: application/json
+
+{
+  "code": "code_authorization_github"
+}</code></pre>
+            </div>
+
+            <h4>Workflow OAuth complet</h4>
+            <ol>
+                <li><strong>Get GitHub Auth URL</strong> → Copier l'URL d'autorisation</li>
+                <li><strong>Navigateur</strong> → Autoriser l'app → Noter le code</li>
+                <li><strong>Login with GitHub Code</strong> → Recevoir le JWT token</li>
+                <li><strong>Tester les permissions</strong> → Même fonctionnalités que l'auth classique</li>
+            </ol>
+
+            <div class="diagram">
+                [Insérer screenshot : Collection OAuth dans Insomnia]
+            </div>
+        </section>
+
+        <section id="meilisearch" class="section">
+            <h2>11. Recherche intelligente avec Meilisearch <span class="badge advanced">Avancé</span></h2>
+
+            <div class="alert warning">
+                <strong>❌ Limitations de la recherche Directus native</strong>
+                <ul>
+                    <li>Recherche uniquement par correspondance exacte</li>
+                    <li>Pas de tolérance aux fautes de frappe</li>
+                    <li>Pas de scoring de pertinence intelligent</li>
+                    <li>Recherche lente sur de gros volumes</li>
+                    <li>Pas de facettes avancées</li>
+                </ul>
+            </div>
+
+            <div class="alert success">
+                <strong>✅ Avantages Meilisearch</strong>
+                <ul>
+                    <li><strong>Recherche ultra-rapide</strong> (< 50ms même avec millions de documents)</li>
+                    <li><strong>Typo-tolérance</strong> automatique et intelligente</li>
+                    <li><strong>Scoring de pertinence</strong> basé sur la popularité, les tags, etc.</li>
+                    <li><strong>Facettes</strong> pour filtrer par tag, créateur, date</li>
+                    <li><strong>Recherche multi-critères</strong> (titre + description + tags)</li>
+                    <li><strong>Analytics de recherche</strong> intégrées</li>
+                </ul>
+            </div>
+
+            <h3>Architecture choisie : Proxy via Directus</h3>
+            <div class="code-block">
+                <pre><code>Frontend → Directus Endpoints Custom → Meilisearch → Résultats</code></pre>
+            </div>
+
+            <h3>Installation Meilisearch</h3>
+            <div class="code-block">
+                <div class="code-header">Installation (Linux/macOS)</div>
+                <pre><code># Installation via cURL
+curl -L https://install.meilisearch.com | sh
+
+# Rendre exécutable et lancer
+chmod +x meilisearch
+./meilisearch --master-key="votre_clé_secrète_développement"</code></pre>
+            </div>
+
+            <h3>Configuration Directus</h3>
+            <div class="code-block">
+                <div class="code-header">Variables d'environnement</div>
+                <pre><code># Configuration Meilisearch
+MEILISEARCH_HOST=http://localhost:7700
+MEILISEARCH_API_KEY=votre_clé_secrète_développement
+MEILISEARCH_INDEX_MEMES=memes_index</code></pre>
+            </div>
+
+            <div class="code-block">
+                <div class="code-header">Installation SDK</div>
+                <pre><code>cd poc/directus-backend
+npm install meilisearch</code></pre>
+            </div>
+
+            <h3>Synchronisation automatique avec Hooks</h3>
+            <div class="alert info">
+                <strong>📁 Créer le fichier extensions/hooks/meilisearch-sync/index.js</strong>
+                Ce hook synchronise automatiquement les memes avec Meilisearch lors de leur création/modification.
+            </div>
+
+            <div class="code-block">
+                <div class="code-header">Hook de synchronisation (extrait)</div>
+                <pre><code>import { MeiliSearch } from 'meilisearch';
+
+export default ({ action }, { env, logger }) => {
+  const client = new MeiliSearch({
+    host: env.MEILISEARCH_HOST || 'http://localhost:7700',
+    apiKey: env.MEILISEARCH_API_KEY
+  });
+  
+  const index = client.index(env.MEILISEARCH_INDEX_MEMES || 'memes_index');
+
+  // Synchronisation lors de création de meme
+  action('items.create', async ({ collection, item, key }) => {
+    if (collection !== 'memes') return;
+    
+    // Indexer le nouveau meme avec ses relations
+    const searchDocument = {
+      id: fullMeme.id,
+      title: fullMeme.title,
+      tags: fullMeme.tags?.map(t => t.tags_id.name) || [],
+      // ... autres champs
+    };
+    
+    await index.addDocuments([searchDocument]);
+  });
+};</code></pre>
+            </div>
+
+            <h3>Endpoints de recherche personnalisés</h3>
+            <div class="alert info">
+                <strong>📁 Créer le fichier extensions/endpoints/search/index.js</strong>
+                Ces endpoints exposent la recherche Meilisearch via l'API Directus.
+            </div>
+
+            <div class="code-block">
+                <div class="code-header">Endpoint de recherche principal</div>
+                <pre><code>export default (router, { env }) => {
+  // Endpoint de recherche principal
+  router.get('/memes', async (req, res) => {
+    const { q, limit = 20, tags, sort } = req.query;
+    
+    const searchOptions = {
+      limit: parseInt(limit),
+      attributesToHighlight: ['title', 'text_top', 'text_bottom'],
+      // Filtres et tri...
+    };
+
+    const results = await index.search(q || '', searchOptions);
+    
+    res.json({
+      hits: results.hits,
+      totalHits: results.estimatedTotalHits,
+      processingTimeMs: results.processingTimeMs
+    });
+  });
+};</code></pre>
+            </div>
+
+            <div class="alert warning">
+                <strong>🔄 Point de migration</strong>
+                Après avoir ajouté les extensions Meilisearch (hooks et endpoints), créez une migration :
+                <div class="code-block">
+                    <pre><code>npx directus schema snapshot migrations/003_add_meilisearch_extensions.json
+git add migrations/003_add_meilisearch_extensions.json
+git commit -m "feat: ajout extensions Meilisearch pour recherche avancée"</code></pre>
+                </div>
+            </div>
+
+            <h3>Test avec Insomnia</h3>
+            <div class="alert success">
+                <strong>🔍 Dossier Search (Meilisearch)</strong>
+                Créez ces requêtes dans Insomnia :
+            </div>
+
+            <div class="code-block">
+                <div class="code-header">Requêtes de test</div>
+                <pre><code># Recherche simple
+GET {{ _.base_url }}/search/memes?q=drole programmation&limit=10
+
+# Recherche avec filtres
+GET {{ _.base_url }}/search/memes?q=bug&tags=programmation,humor&sort=likes_desc
+
+# Autocomplétion
+GET {{ _.base_url }}/search/memes/suggest?q=prog&limit=5</code></pre>
+            </div>
+
+            <h4>Test du workflow de recherche</h4>
+            <ol>
+                <li><strong>Créer plusieurs memes</strong> avec des tags différents</li>
+                <li><strong>Attendre la synchronisation</strong> automatique (hooks)</li>
+                <li><strong>Tester la recherche typo-tolérante</strong> : "meem" trouve "meme"</li>
+                <li><strong>Tester les filtres</strong> par tags</li>
+                <li><strong>Vérifier l'autocomplétion</strong></li>
+                <li><strong>Analyser les facettes</strong> pour voir les tags populaires</li>
+            </ol>
+        </section>
+
+        <section id="websockets" class="section">
+            <h2>12. WebSockets et temps réel avec Directus <span class="badge advanced">Avancé</span></h2>
+
+            <div class="alert info">
+                <strong>🔄 Directus Realtime</strong>
+                Directus Realtime permet de recevoir des notifications en temps réel lorsque des données changent dans votre base de données.
+            </div>
+
+            <h3>Cas d'usage temps réel</h3>
+            <div class="feature-grid">
+                <div class="feature-card">
+                    <h4>🔔 Notifications instantanées</h4>
+                    <p>Quand quelqu'un like votre meme</p>
+                </div>
+                <div class="feature-card">
+                    <h4>📱 Feed en temps réel</h4>
+                    <p>Nouveaux memes apparaissent automatiquement</p>
+                </div>
+                <div class="feature-card">
+                    <h4>📊 Compteurs live</h4>
+                    <p>Likes, vues, commentaires mis à jour</p>
+                </div>
+                <div class="feature-card">
+                    <h4>👥 Collaboration temps réel</h4>
+                    <p>Plusieurs utilisateurs travaillent ensemble</p>
+                </div>
+            </div>
+
+            <h3>Architecture WebSocket Directus</h3>
+            <div class="code-block">
+                <pre><code>Client (Frontend/Insomnia) 
+    ↕ WebSocket Connection
+Directus Server (:8055/websocket)
+    ↕ Database Events  
+SQLite Database</code></pre>
+            </div>
+
+            <h3>Configuration WebSockets</h3>
+            <p>Les WebSockets sont <strong>activés par défaut</strong> dans Directus v11.</p>
+            <div class="alert success">
+                <strong>🔗 URL d'accès</strong>
+                <code>ws://localhost:8055/websocket</code>
+            </div>
+
+            <h4>Permissions pour les événements temps réel</h4>
+            <ol>
+                <li>Settings → <strong>Access Control</strong> → <strong>Roles</strong></li>
+                <li><strong>Authenticated User</strong> → <strong>System Collections</strong></li>
+                <li><strong>Directus Activity</strong> → <strong>Read</strong> : ✅ Activé</li>
+                <li><strong>Directus Revisions</strong> → <strong>Read</strong> : ✅ Activé (optionnel)</li>
+            </ol>
+
+            <h3>Types d'événements disponibles</h3>
+            <div class="feature-grid">
+                <div class="feature-card">
+                    <h4>Événements système</h4>
+                    <ul>
+                        <li><code>create</code> : Nouvel item créé</li>
+                        <li><code>update</code> : Item modifié</li>
+                        <li><code>delete</code> : Item supprimé</li>
+                    </ul>
+                </div>
+                <div class="feature-card">
+                    <h4>Collections supportées</h4>
+                    <ul>
+                        <li><code>items.memes</code> : Événements sur les memes</li>
+                        <li><code>items.memes_likes</code> : Événements sur les likes</li>
+                        <li><code>items.notifications</code> : Événements notifications</li>
+                        <li><code>items.tags</code> : Événements sur les tags</li>
+                    </ul>
+                </div>
+            </div>
+
+            <h3>Test WebSocket avec Insomnia</h3>
+            <div class="alert info">
+                <strong>🔄 Créer une connexion WebSocket</strong>
+                <ol>
+                    <li><strong>New Request</strong> → <strong>WebSocket Request</strong></li>
+                    <li><strong>Name</strong> : "Directus Realtime Connection"</li>
+                    <li><strong>URL</strong> : <code>ws://localhost:8055/websocket</code></li>
+                    <li><strong>Headers</strong> : <code>Authorization: Bearer {{ _.token }}</code></li>
+                </ol>
+            </div>
+
+            <h4>Messages de souscription</h4>
+            <div class="code-block">
+                <div class="code-header">Authentification WebSocket</div>
+                <pre><code>{
+  "type": "auth",
+  "access_token": "your-jwt-token"
+}</code></pre>
+            </div>
+
+            <div class="code-block">
+                <div class="code-header">Souscription aux événements</div>
+                <pre><code>{
+  "type": "subscribe",
+  "collection": "memes",
+  "query": {
+    "fields": ["*", "user_created.first_name", "tags.tags_id.name"]
+  }
+}</code></pre>
+            </div>
+
+            <h4>Test du workflow temps réel</h4>
+            <ol>
+                <li><strong>Connexion WebSocket</strong> → Message d'authentification</li>
+                <li><strong>Souscription</strong> aux collections <code>memes</code> et <code>memes_likes</code></li>
+                <li><strong>Dans un autre onglet REST</strong> : créer un nouveau meme</li>
+                <li><strong>Observer</strong> le message WebSocket temps réel reçu</li>
+                <li><strong>Liker le meme</strong> via REST API</li>
+                <li><strong>Voir</strong> la notification de like en temps réel</li>
+            </ol>
+
+            <h3>Automatisation des notifications</h3>
+            <div class="alert warning">
+                <strong>📁 Hook pour notifications automatiques</strong>
+                Créez un hook dans <code>extensions/hooks/like-notification/index.js</code> pour automatiser la création de notifications lors d'événements.
+            </div>
+
+            <div class="code-block">
+                <div class="code-header">Exemple de Hook basique</div>
+                <pre><code>export default ({ action }) => {
+  action('items.create', async ({ collection, item }) => {
+    if (collection === 'memes_likes') {
+      // Créer une notification automatiquement
+      await services.ItemsService('notifications').createOne({
+        user_id: item.meme_owner_id,
+        message: `Quelqu'un a liké votre meme !`,
+        event_type: 'nouveau_like',
+        meme_id: item.meme_id
+      });
+    }
+  });
+};</code></pre>
+            </div>
+
+            <div class="alert warning">
+                <strong>🔄 Point de migration</strong>
+                Après avoir ajouté des hooks WebSocket personnalisés, créez une migration :
+                <div class="code-block">
+                    <pre><code>npx directus schema snapshot migrations/004_add_websocket_hooks.json
+git add migrations/004_add_websocket_hooks.json
+git commit -m "feat: ajout hooks notifications temps réel"</code></pre>
+                </div>
+            </div>
+
+            <h3>Collection Insomnia finale</h3>
+            <div class="code-block">
+                <div class="code-header">Structure complète</div>
+                <pre><code>🔐 Authentification
+📁 Files & Upload
+🏷️ Tags  
+🎭 Memes
+❤️ Likes
+🔔 Notifications
+🔐 OAuth GitHub (Bonus)
+🔍 Search (Meilisearch)
+🔄 WebSockets</code></pre>
+            </div>
+        </section>
+
+        <div class="section">
+            <h2>🎉 Conclusion</h2>
+            
+            <div class="alert success">
+                <strong>✅ Félicitations !</strong>
+                Vous avez créé un <strong>backend Directus complet et autonome</strong> pour votre application Meme Manager avec :
+            </div>
+
+            <div class="feature-grid">
+                <div class="feature-card">
+                    <h4>🗄️ Modèle de données robuste</h4>
+                    <p>Relations utilisateurs, memes, tags et likes</p>
+                </div>
+                <div class="feature-card">
+                    <h4>🔐 Système d'authentification</h4>
+                    <p>Intégré et sécurisé avec support OAuth</p>
+                </div>
+                <div class="feature-card">
+                    <h4>🔌 API REST complète</h4>
+                    <p>Testée et documentée</p>
+                </div>
+                <div class="feature-card">
+                    <h4>🖼️ Gestion avancée des médias</h4>
+                    <p>Transformations automatiques</p>
+                </div>
+                <div class="feature-card">
+                    <h4>🔒 Permissions granulaires</h4>
+                    <p>Différents types d'utilisateurs</p>
+                </div>
+                <div class="feature-card">
+                    <h4>🔄 Migrations versionnées</h4>
+                    <p>Gestion professionnelle du schéma</p>
+                </div>
+            </div>
+
+            <h3>🔑 Concepts backend maîtrisés</h3>
+            <div class="feature-grid">
+                <div class="feature-card">
+                    <h4>Architecture API-First</h4>
+                    <ul>
+                        <li>Séparation claire backend/frontend</li>
+                        <li>API REST standardisée et prévisible</li>
+                        <li>Authentification JWT stateless</li>
+                        <li>Gestion des relations complexes (M2O, M2M)</li>
+                    </ul>
+                </div>
+                <div class="feature-card">
+                    <h4>Sécurité et permissions</h4>
+                    <ul>
+                        <li>Système de rôles et permissions</li>
+                        <li>Validation automatique des données</li>
+                        <li>Protection contre les accès non autorisés</li>
+                        <li>Isolation des données par utilisateur</li>
+                    </ul>
+                </div>
+                <div class="feature-card">
+                    <h4>Performance et optimisation</h4>
+                    <ul>
+                        <li>Transformations d'images à la volée</li>
+                        <li>Relations optimisées (pas de N+1 queries)</li>
+                        <li>Cache automatique des assets</li>
+                        <li>Requêtes SQL optimisées par Directus</li>
+                    </ul>
+                </div>
+            </div>
+
+            <h3>🚀 Votre API prête pour le frontend</h3>
+            <p>Votre backend Directus est maintenant <strong>prêt à être consommé</strong> par n'importe quel frontend :</p>
+            <ul>
+                <li><strong>Angular</strong> (cours suivant) 🅰️</li>
+                <li><strong>React</strong> ⚛️</li>
+                <li><strong>Vue.js</strong> 🟢</li>
+                <li><strong>Mobile</strong> (React Native, Flutter) 📱</li>
+                <li><strong>Applications desktop</strong> 💻</li>
+            </ul>
+            <p><strong>L'avantage de cette approche : Un seul backend, plusieurs frontends possibles !</strong></p>
+
+            <h3>📋 Checklist de validation finale</h3>
+            <p>Avant de passer au frontend, vérifiez que :</p>
+            <ul class="checklist">
+                <li>Tous les endpoints API fonctionnent dans Insomnia/Postman</li>
+                <li>L'authentification JWT marche correctement</li>
+                <li>Les permissions respectent les règles métier</li>
+                <li>Les uploads d'images et transformations sont opérationnels</li>
+                <li>Les relations entre collections sont correctes</li>
+                <li>L'interface admin permet de gérer le contenu facilement</li>
+                <li><strong>Migrations créées</strong> pour versioner votre schéma de données</li>
+            </ul>
+
+            <h3>🎯 Prochaine étape : Frontend Angular</h3>
+            <p>Dans le prochain cours, vous utiliserez cette API pour créer une interface utilisateur moderne avec Angular, en vous connectant à ce backend déjà fonctionnel.</p>
+        </div>
+    </main>
+
+    <footer>
+        <div class="container">
+            <div class="footer-content">
+                <div class="footer-section">
+                    <h3>📚 Ressources utiles</h3>
+                    <ul>
+                        <li><a href="https://docs.directus.io">Documentation Directus</a></li>
+                        <li><a href="https://docs.directus.io/reference/introduction">API Reference</a></li>
+                        <li><a href="https://docs.directus.io/app/data-model/relationships">Guide des Relations</a></li>
+                        <li><a href="https://docs.directus.io/configuration/users-roles-permissions">Système de Permissions</a></li>
+                    </ul>
+                </div>
+                <div class="footer-section">
+                    <h3>🔧 Outils de test d'API</h3>
+                    <ul>
+                        <li><a href="https://insomnia.rest">Insomnia (recommandé)</a></li>
+                        <li><a href="https://postman.com">Postman</a></li>
+                        <li><a href="#">Collections pré-faites Directus Community</a></li>
+                    </ul>
+                </div>
+                <div class="footer-section">
+                    <h3>👥 Communauté et support</h3>
+                    <ul>
+                        <li><a href="https://discord.gg/directus">Discord Directus</a></li>
+                        <li><a href="https://github.com/directus/directus">GitHub</a></li>
+                        <li><a href="https://github.com/directus/examples">Examples</a></li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+    </footer>
+</body>
+</html>

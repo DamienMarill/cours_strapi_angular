@@ -33,7 +33,7 @@ Directus est un **headless CMS** (Content Management System) moderne qui transfo
 - ✅ **Système de permissions** granulaire
 - ✅ **TypeScript SDK** pour l'intégration Angular
 
-*[Insérer screenshot : Interface d'administration Directus]*
+*[Insérer screenshot directus8.aviff: Interface d'administration Directus]*
 
 ---
 
